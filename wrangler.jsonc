@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sentinela-tcc",
+  "compatibility_date": "2026-11-18",
+  "main": "@tanstack/react-start/server-entry",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sentinela-db",
+      "database_id": "PREENCHA_COM_ID_DO_D1"
+    }
+  ]
+}
