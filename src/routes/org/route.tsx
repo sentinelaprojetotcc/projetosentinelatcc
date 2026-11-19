@@ -28,7 +28,7 @@ import { sessionFn } from "@/lib/auth";
 export const Route = createFileRoute("/org")({
   beforeLoad: async ({ location }) => {
     const user = await sessionFn();
-    if (!user || user.role !== "institutional") throw redirect({ to: "/institucional/entrar" });
+    if (!user || user.role !== "institutional" || (user.institutionalType !== "agent" && user.institutionalType !== "auditor")) throw redirect({ to: "/institucional/entrar" });
     const agentOnly = ["/org/ocorrencias", "/org/analises", "/org/populacao", "/org/patrulhamentos", "/org/recomendacoes", "/org/decisoes-ia", "/org/lumia"];
     const auditorOnly = ["/org/auditoria", "/org/contestacoes", "/org/relatorios", "/org/equidade", "/org/qualidade-dados", "/org/governanca-modelos", "/org/mitigacao"];
     if (user.institutionalType === "agent" && auditorOnly.some((path) => location.pathname.startsWith(path))) throw redirect({ to: "/org" });
