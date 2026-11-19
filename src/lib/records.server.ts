@@ -44,17 +44,29 @@ const tables: Record<RecordKind, string> = {
 
 async function requireInstitutional() {
   const user = await currentSession();
-  if (!user || user.role !== "institutional") throw new Error("Acesso institucional necessário.");
+  if (!user || user.role !== "institutional" ||
+      (user.institutionalType !== "agent" && user.institutionalType !== "auditor")) {
+    throw new Error("Acesso institucional autorizado necessário.");
+  }
   return user;
 }
 
 async function requireRecordPermission(kind: RecordKind, mutation = false) {
   const user = await requireInstitutional();
-  if (!mutation) return user;
-  const agentKinds: RecordKind[] = ["occurrences", "predictions", "patrols", "recommendations", "ai_decisions"];
-  const auditorKinds: RecordKind[] = ["predictions", "audits", "contests", "reports", "bias_alerts", "mitigations", "models", "data_quality"];
-  const allowed = user.institutionalType === "agent" ? agentKinds : auditorKinds;
-  if (!allowed.includes(kind)) throw new Error("Seu perfil institucional não pode alterar este tipo de registro.");
+  // A verificação acontece no servidor: ocultar menus não protege uma server function.
+  const sharedReadable: RecordKind[] = ["occurrences", "predictions", "notifications", "contests", "bias_alerts", "ai_decisions"];
+  const agentReadable: RecordKind[] = ["patrols", "recommendations"];
+  const auditorReadable: RecordKind[] = ["audits", "reports", "mitigations", "models", "data_quality"];
+  const agentMutable: RecordKind[] = ["occurrences", "predictions", "patrols", "recommendations", "ai_decisions"];
+  const auditorMutable: RecordKind[] = ["predictions", "audits", "contests", "reports", "bias_alerts", "mitigations", "models", "data_quality"];
+  const permitted = mutation
+    ? (user.institutionalType === "agent" ? agentMutable : auditorMutable)
+    : [...sharedReadable, ...(user.institutionalType === "agent" ? agentReadable : auditorReadable)];
+  if (!permitted.includes(kind)) {
+    throw new Error(mutation
+      ? "Seu perfil institucional não pode alterar este tipo de registro."
+      : "Seu perfil institucional não pode consultar este tipo de registro.");
+  }
   return user;
 }
 
