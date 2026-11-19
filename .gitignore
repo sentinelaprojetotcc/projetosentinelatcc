@@ -33,3 +33,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Não versionar backups e exportações com dados pessoais de produção
+data/*.sql
+data/*.sqlite
+data/*.sqlite3
+migrations/private-data/
+worker-configuration.d.ts
