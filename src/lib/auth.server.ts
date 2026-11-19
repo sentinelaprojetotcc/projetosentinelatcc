@@ -149,6 +149,9 @@ export async function loginAccount(input: { email: string; password: string; rol
   if (!row || row.role !== input.role || !passwordMatches(input.password, String(row.password_hash))) {
     throw new Error("E-mail ou senha incorretos para este tipo de acesso.");
   }
+  if (input.role === "institutional" && row.institutional_type !== "agent" && row.institutional_type !== "auditor") {
+    throw new Error("Perfil institucional inválido. Procure o responsável pelo Sentinel.");
+  }
   if (input.role === "institutional" && input.functionalId?.trim() !== String(row.functional_id)) {
     throw new Error("Identificação funcional incorreta.");
   }
