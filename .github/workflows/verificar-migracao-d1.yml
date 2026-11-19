@@ -1,0 +1,29 @@
+name: Verificar migração Cloudflare D1
+
+on:
+  push:
+    branches:
+      - feat/cloudflare-d1-migracao
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+      - name: Instalar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Instalar dependências
+        run: bun install
+      - name: Compilar cliente e servidor
+        run: bun run build
