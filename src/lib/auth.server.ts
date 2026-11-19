@@ -100,6 +100,11 @@ async function createSession(userId: string) {
 }
 
 export async function registerAccount(input: RegisterInput) {
+  // Não permita que uma chamada pública crie contas de agente ou auditor.
+  // O provisionamento institucional exige um fluxo administrativo separado.
+  if (!input || input.role !== "citizen") {
+    throw new Error("Cadastro institucional indisponível: solicite autorização ao responsável pelo Sentinel.");
+  }
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (name.length < 3) throw new Error("Informe o nome completo.");
@@ -184,15 +189,9 @@ export async function changePassword(input: { currentPassword: string; newPasswo
   return { ok: true };
 }
 
-export async function resetCitizenPassword(input: { email: string; cpf: string; newPassword: string }) {
-  const row = await db.prepare("SELECT id, cpf FROM users WHERE email = ? COLLATE NOCASE AND role = 'citizen'")
-    .get(input.email.trim()) as { id: string; cpf: string | null } | undefined;
-  const clean = (value: string) => value.replace(/\D/g, "");
-  if (!row || !row.cpf || clean(row.cpf) !== clean(input.cpf)) throw new Error("E-mail ou CPF não conferem com a conta.");
-  if (input.newPassword.length < 8) throw new Error("A nova senha deve ter pelo menos 8 caracteres.");
-  await db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(input.newPassword), row.id);
-  await db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.id);
-  return { ok: true };
+// Recuperação por CPF não prova posse da conta; requer token de uso único enviado por canal verificado.
+export async function resetCitizenPassword(_input: { email: string; cpf: string; newPassword: string }) {
+  throw new Error("Recuperação de senha temporariamente indisponível. Procure o responsável pelo Sentinel.");
 }
 
 export async function updatePhone(phoneInput: string) {
@@ -205,16 +204,9 @@ export async function updatePhone(phoneInput: string) {
   return { ok: true, phone };
 }
 
-export async function resetInstitutionalPassword(input: { email: string; functionalId: string; newPassword: string }) {
-  const row = await db.prepare("SELECT id, functional_id FROM users WHERE email = ? COLLATE NOCASE AND role = 'institutional'")
-    .get(input.email.trim()) as { id: string; functional_id: string | null } | undefined;
-  if (!row || !row.functional_id || row.functional_id.toLocaleLowerCase() !== input.functionalId.trim().toLocaleLowerCase()) {
-    throw new Error("E-mail ou identificação funcional não conferem com a conta.");
-  }
-  if (input.newPassword.length < 8) throw new Error("A nova senha deve ter pelo menos 8 caracteres.");
-  await db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(input.newPassword), row.id);
-  await db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.id);
-  return { ok: true };
+// Matrícula funcional, por si só, não é fator seguro para recuperação de senha.
+export async function resetInstitutionalPassword(_input: { email: string; functionalId: string; newPassword: string }) {
+  throw new Error("Recuperação de senha institucional indisponível. Procure o responsável pelo Sentinel.");
 }
 
 export async function getAccessibilityPreferences(): AccessibilityPreferences {
