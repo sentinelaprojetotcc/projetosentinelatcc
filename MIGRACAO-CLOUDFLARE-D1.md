@@ -28,9 +28,9 @@ bunx wrangler login
 bunx wrangler d1 create sentinela-db
 ```
 
-O comando devolve um `database_id` UUID. Substitua **00000000-0000-0000-0000-000000000000** por esse ID em `wrangler.jsonc`. O binding deve continuar se chamando **DB**.
+**Banco criado em 18/11/2026:** `sentinela-db` (`bc71aa3b-1c0f-456d-b1a8-f080c31663f6`). O arquivo `wrangler.jsonc` já aponta para ele. O binding usado pelo código é **DB**, e deve permanecer assim, mesmo que o Wrangler tenha sugerido `sentinela_db` ao criar o banco.
 
-O arquivo foi criado com ID provisório: **não execute o deploy sem substituí-lo**.
+**Não execute o deploy antes de importar e validar os dados e corrigir eventuais erros de build.**
 
 ## 3. Preparar uma exportação privada do SQLite
 
