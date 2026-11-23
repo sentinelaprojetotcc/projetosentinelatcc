@@ -187,6 +187,15 @@ export async function addCitizenOccurrence(input: { title: string; region: strin
 export async function addCitizenContest(input: { targetType: "occurrence" | "prediction"; reason: string; details: string; targetId?: string; evidenceName?: string; evidenceType?: string; evidenceData?: string }) {
   const user = await requireCitizen();
   if (!input.reason.trim() || !input.details.trim()) throw new Error("Informe o motivo e explique a contestação.");
+  // O vínculo com a previsão é conferido no servidor, não só no formulário.
+  if (input.targetType === "prediction") {
+    if (!input.targetId || !await db.prepare("SELECT id FROM predictions WHERE id = ?").get(input.targetId)) {
+      throw new Error("Selecione uma previsão válida para contestar.");
+    }
+  } else if (input.targetId) {
+    const occurrence = await db.prepare("SELECT id FROM occurrences WHERE id = ? AND created_by = ?").get(input.targetId, user.id);
+    if (!occurrence) throw new Error("Selecione uma ocorrência válida da sua conta.");
+  }
   const id = randomUUID();
   const now = new Date();
   const eventDate = now.toISOString().slice(0, 10);
