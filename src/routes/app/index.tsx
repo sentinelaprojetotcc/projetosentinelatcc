@@ -28,7 +28,7 @@ function CitizenHome() {
 
   return <div className="space-y-6">
     <CitizenHeatmap />
-    <PageHeader title={`Olá, ${firstName}`} description="Indicadores reais de segurança calculados para a sua região." action={<Button asChild><Link to="/app/registrar">Registrar ocorrência</Link></Button>} />
+    <PageHeader title={`Olá, ${firstName}`} description="Indicadores reais de segurança calculados para a sua região." action={<Button asChild><Link to="/app/ocorrencias" search={{ registrar: true }}>Registrar ocorrência</Link></Button>} />
     <div className="grid gap-4 md:grid-cols-3">
       <Panel><p className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="size-4 text-primary" /> Sua região</p><p className="mt-2 font-sans text-lg font-semibold">{user.neighborhood ?? "Salvador"} · {user.city} — {user.state}</p></Panel>
       <Panel className="md:col-span-2"><p className="text-xs uppercase tracking-wider text-muted-foreground">Situação da região</p><div className="mt-2"><StatusPill tone={situation === "Alerta" ? "danger" : situation === "Atenção" ? "warning" : "success"}>{situation}</StatusPill></div><p className="mt-3 text-xs text-muted-foreground">Classificação informativa baseada no volume agregado recente. Não é certeza de ocorrência nem avaliação de pessoas.</p></Panel>
