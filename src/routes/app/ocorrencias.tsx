@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { myCitizenOccurrencesFn, type ManagedRecord } from "@/lib/records";
 
 export const Route = createFileRoute("/app/ocorrencias")({
+  validateSearch: (search: Record<string, unknown>) => ({ registrar: search.registrar === true ? true : undefined }),
   head: () => ({
     meta: [
       { title: "Minhas ocorrências — Sentinela" },
@@ -36,7 +37,9 @@ function MinhasOcorrencias() {
   const [open, setOpen] = useState<string | null>(null);
   const [items, setItems] = useState<Array<ManagedRecord & { protocol: string }>>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const { registrar } = Route.useSearch();
+  const [showForm, setShowForm] = useState(Boolean(registrar));
+  useEffect(() => { if (registrar) setShowForm(true); }, [registrar]);
   const refresh = async () => { setItems(await myCitizenOccurrencesFn()); };
   useEffect(() => { void refresh().finally(() => setLoading(false)); }, []);
 
