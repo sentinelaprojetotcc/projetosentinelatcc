@@ -20,6 +20,12 @@
         "database_name": "sentinela-db-preview",
         "database_id": "5353bc16-9c95-43ce-858e-25b943502461"
       }
+    ],
+    "r2_buckets": [
+      {
+        "binding": "AGENT_DOCUMENTS",
+        "bucket_name": "sentinela-documentos-preview"
+      }
     ]
   }
 }
