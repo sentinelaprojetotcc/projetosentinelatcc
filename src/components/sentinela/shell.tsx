@@ -17,6 +17,7 @@ export function AppShell({
   meta,
   user,
   showHeaderNotifications = true,
+  showUnreadCount = false,
 }: {
   nav: NavItem[];
   children: ReactNode;
@@ -24,13 +25,14 @@ export function AppShell({
   meta?: string;
   user: { name: string; role: string; initials: string };
   showHeaderNotifications?: boolean;
+  showUnreadCount?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const path = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => { accessibilityPreferencesFn().then(applyAccessibilityPreferences).catch(() => undefined); }, [user.name]);
   useEffect(() => {
-    if (!showHeaderNotifications) return;
+    if (!showHeaderNotifications || !showUnreadCount) return;
     let cancelled = false;
     const refresh = async () => {
       try {
@@ -41,7 +43,7 @@ export function AppShell({
     void refresh();
     const timer = window.setInterval(() => { void refresh(); }, 15000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [showHeaderNotifications, path]);
+  }, [showHeaderNotifications, showUnreadCount, path]);
 
   const navList = (
     <nav className="space-y-1">
@@ -102,15 +104,15 @@ export function AppShell({
             {meta && <p className="truncate text-xs text-muted-foreground">{meta}</p>}
           </div>
           {showHeaderNotifications && (
-            <Button asChild variant="ghost" size="icon" aria-label={unreadNotifications ? `Notificações: ${unreadNotifications} não lidas` : "Notificações"}>
+            <Button asChild variant="ghost" size="icon" aria-label={showUnreadCount && unreadNotifications ? `Notificações: ${unreadNotifications} não lidas` : "Notificações"}>
               <Link to="/org/notificacoes">
                 <span className="relative">
                   <Bell className="size-5" />
-                  {unreadNotifications > 0 && (
+                  {showUnreadCount ? (unreadNotifications > 0 && (
                     <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                       {unreadNotifications > 99 ? "99+" : unreadNotifications}
                     </span>
-                  )}
+                  )) : <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-primary" />}
                 </span>
               </Link>
             </Button>
