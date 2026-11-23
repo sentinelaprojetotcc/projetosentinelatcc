@@ -42,7 +42,7 @@ function Configuracoes() {
           </Link>
         ))}
       </nav>
-      {current === "gerais" && <SettingsView user={user} />}
+      {current === "gerais" && <SettingsView user={user} hidePrivacy />}
       {current === "privacidade" && <CitizenPrivacyContent />}
       {current === "transparencia" && <PublicTransparencyContent />}
     </div>
