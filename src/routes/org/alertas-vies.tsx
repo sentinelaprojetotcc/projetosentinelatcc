@@ -8,9 +8,9 @@ import { addRecordFn, listRecordsFn, type ManagedRecord } from "@/lib/records";
 
 export const Route = createFileRoute("/org/alertas-vies")({
   beforeLoad: ({ context }) => { if (context.user.institutionalType !== "agent") throw redirect({ to: "/org" }); },
-  component: Alertas,
+  component: AgentBiasAlerts,
 });
-function Alertas() {
+export function AgentBiasAlerts({ embedded = false }: { embedded?: boolean }) {
   const [alerts, setAlerts] = useState<ManagedRecord[]>([]);
   const [opened, setOpened] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -26,7 +26,7 @@ function Alertas() {
     setMessage("Solicitação registrada no histórico de decisões para revisão humana.");
   }
 
-  return <div className="space-y-5"><PageHeader title="Alertas de disparidade" description="Analise diferenças relevantes antes de utilizar indicadores em decisões operacionais." />
+  return <div className="space-y-5">{!embedded && <PageHeader title="Alertas de disparidade" description="Analise diferenças relevantes antes de utilizar indicadores em decisões operacionais." />}
     <div className="grid gap-4 sm:grid-cols-3"><StatCard label="Alertas recebidos" value={String(alerts.length)} /><StatCard label="Necessitam análise" value={String(alerts.filter((item) => !/conclu|encerr/i.test(item.status)).length)} tone="warning" /><StatCard label="Severidade alta" value={String(high)} tone={high ? "danger" : "success"} /></div>
     {message && <Disclaimer>{message}</Disclaimer>}
     <Panel title="Possíveis disparidades detectadas" subtitle="Uma diferença observada é um sinal para investigação, não uma conclusão." action={<div className="relative"><Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input className="w-64 pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar alerta" /></div>}>
