@@ -12,9 +12,10 @@ export function formatarCPF(valor: string) {
     .replace(/\.(\d{3})(\d)/, ".$1-$2");
 }
 
-/** Protótipo acadêmico: valida apenas a presença de exatamente 11 dígitos. */
+/** Protótipo acadêmico: formato de 11 dígitos, sem verificar dígitos de controle. */
 export function cpfValido(valor: string) {
-  return somenteDigitos(valor).length === 11;
+  const input = valor.trim();
+  return /^\d{11}$/.test(input) || /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(input);
 }
 
 export function emailValido(email: string) {
