@@ -13,6 +13,8 @@ describe("Validações de cadastro do protótipo Sentinela", () => {
     expect(cpfValido("111.111.111-11")).toBe(true); // repetição permitida no protótipo
     expect(cpfValido("123")).toBe(false);
     expect(cpfValido("123456789012")).toBe(false);
+    expect(cpfValido("abc12345678901")).toBe(false);
+    expect(cpfValido("123-456-789-01")).toBe(false);
     expect(cpfValido("")).toBe(false);
   });
 
