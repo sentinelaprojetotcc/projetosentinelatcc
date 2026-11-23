@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { PrivacySettingsControls } from "@/components/sentinela/settings-view";
 
 const faq = [
   {
@@ -45,6 +46,8 @@ export function CitizenPrivacyContent() {
         title="Privacidade e Transparência"
         description="Como o Sentinela trata dados e como você mantém controle sobre eles."
       />
+
+      <PrivacySettingsControls />
 
       <Panel title="Ciclo dos dados">
         <div className="flex flex-wrap items-center gap-2">
