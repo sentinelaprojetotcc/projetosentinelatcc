@@ -2,6 +2,7 @@ import "@tanstack/react-start/server-only";
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { db } from "./db.server";
+import { cpfValido, emailValido, senhaForte, somenteDigitos } from "./institutional-validation";
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 export type AccountRole = "citizen" | "institutional";
@@ -106,8 +107,10 @@ export async function registerAccount(input: RegisterInput) {
   if (!input || (input.role !== "citizen" && input.role !== "institutional")) {
     throw new Error("Tipo de cadastro inválido.");
   }
-  // Uma pessoa não pode se atribuir acesso policial/auditor apenas enviando
-  // role='institutional' para a função do servidor.
+  // Agentes solicitam análise; não podem se conceder acesso em registro direto.
+  if (input.role === "institutional" && input.institutionalType !== "auditor") {
+    throw new Error("Acesso de agente exige análise institucional antes da liberação.");
+  }
   if (input.role === "institutional") {
     const configuredCode = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE?.trim();
     const suppliedCode = typeof input.authorizationCode === "string" ? input.authorizationCode.trim() : "";
@@ -127,18 +130,20 @@ export async function registerAccount(input: RegisterInput) {
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (name.length < 3) throw new Error("Informe o nome completo.");
-  if (!email.includes("@")) throw new Error("Informe um e-mail válido.");
+  if (!emailValido(email)) throw new Error("Informe um e-mail válido.");
   if (input.password.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
-  if (input.role === "citizen" && !normalize(input.cpf)) throw new Error("Informe o CPF.");
-  if (input.role === "institutional" && (!normalize(input.institution) || !normalize(input.functionalId))) {
-    throw new Error("Informe o órgão e a identificação funcional.");
+  if (input.role === "institutional") {
+    if (!cpfValido(input.cpf ?? "")) throw new Error("CPF inválido.");
+    if (!senhaForte(input.password)) throw new Error("Use pelo menos 10 caracteres, incluindo maiúscula, minúscula, número e símbolo.");
   }
-  if (input.role === "institutional" && input.institutionalType !== "agent" && input.institutionalType !== "auditor") {
-    throw new Error("Selecione um perfil institucional válido.");
+  if (input.role === "citizen" && !normalize(input.cpf)) throw new Error("Informe o CPF.");
+  if (input.role === "institutional" && input.institutionalType !== "auditor") {
+    throw new Error("Perfil institucional inválido para ativação de auditor.");
   }
 
   try {
     const id = randomUUID();
+    const functionalId = input.role === "institutional" ? `AUD-${randomUUID()}` : normalize(input.functionalId);
     await db.prepare(`
       INSERT INTO users (
         id, role, name, email, password_hash, cpf, birth_date, phone, postal_code,
@@ -146,11 +151,11 @@ export async function registerAccount(input: RegisterInput) {
         latitude, longitude, location_consent, institutional_type
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      id, input.role, name, email, hashPassword(input.password), normalize(input.cpf),
+      id, input.role, name, email, hashPassword(input.password), input.role === "institutional" ? somenteDigitos(input.cpf ?? "") : normalize(input.cpf),
       normalize(input.birthDate), normalize(input.phone), normalize(input.postalCode),
       normalize(input.state) ?? "BA", normalize(input.city) ?? "Salvador",
-      normalize(input.neighborhood), normalize(input.address), normalize(input.institution),
-      normalize(input.functionalId), input.locationConsent ? input.latitude ?? null : null,
+      normalize(input.neighborhood), normalize(input.address), input.role === "institutional" ? "Auditoria institucional" : normalize(input.institution),
+      functionalId, input.locationConsent ? input.latitude ?? null : null,
       input.locationConsent ? input.longitude ?? null : null, input.locationConsent ? 1 : 0,
       input.role === "institutional" ? input.institutionalType : null,
     );
@@ -165,7 +170,7 @@ export async function registerAccount(input: RegisterInput) {
   }
 }
 
-export async function loginAccount(input: { email: string; password: string; role: AccountRole; functionalId?: string }) {
+export async function loginAccount(input: { email: string; password: string; role: AccountRole; institutionalType?: InstitutionalType }) {
   const row = await db.prepare("SELECT * FROM users WHERE email = ? COLLATE NOCASE").get(input.email.trim()) as Record<string, unknown> | undefined;
   if (!row || row.role !== input.role || !passwordMatches(input.password, String(row.password_hash))) {
     throw new Error("E-mail ou senha incorretos para este tipo de acesso.");
@@ -173,8 +178,8 @@ export async function loginAccount(input: { email: string; password: string; rol
   if (input.role === "institutional" && row.institutional_type !== "agent" && row.institutional_type !== "auditor") {
     throw new Error("Perfil institucional inválido. Procure o responsável pelo Sentinel.");
   }
-  if (input.role === "institutional" && input.functionalId?.trim() !== String(row.functional_id)) {
-    throw new Error("Identificação funcional incorreta.");
+  if (input.role === "institutional" && input.institutionalType !== row.institutional_type) {
+    throw new Error("Esta conta não pertence ao perfil institucional selecionado.");
   }
   await createSession(String(row.id));
   return publicUser(row);
