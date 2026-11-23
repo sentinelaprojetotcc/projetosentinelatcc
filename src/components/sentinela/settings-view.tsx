@@ -23,7 +23,17 @@ function Toggle({ label, hint, on = false, checked, onCheckedChange }: { label: 
   );
 }
 
-export function SettingsView({ institutional = false, user }: { institutional?: boolean; user: SessionUser }) {
+/** Controles originais de privacidade, compartilhados sem alterar o acesso institucional. */
+export function PrivacySettingsControls() {
+  return <Panel title="Permissões de privacidade">
+    <Toggle label="Permitir uso de localização" hint="Localização aproximada" on />
+    <Toggle label="Compartilhar dados agregados com órgãos autorizados" on />
+    <Toggle label="Permitir contato posterior sobre meus registros" />
+    <Toggle label="Manter histórico de consultas" />
+  </Panel>;
+}
+
+export function SettingsView({ institutional = false, user, hidePrivacy = false }: { institutional?: boolean; user: SessionUser; hidePrivacy?: boolean }) {
   const [preferences, setPreferences] = useState<AccessibilityPreferences>({ textScale: 100, highContrast: false, reduceMotion: false, screenReader: true });
   const [saved, setSaved] = useState("");
   const [passwordStatus, setPasswordStatus] = useState("");
@@ -97,12 +107,7 @@ export function SettingsView({ institutional = false, user }: { institutional?: 
         <Toggle label="Revisões e contestações" on />
       </Panel>
 
-      <Panel title="Privacidade">
-        <Toggle label="Permitir uso de localização" hint="Localização aproximada" on />
-        <Toggle label="Compartilhar dados agregados com órgãos autorizados" on />
-        <Toggle label="Permitir contato posterior sobre meus registros" />
-        <Toggle label="Manter histórico de consultas" />
-      </Panel>
+      {!hidePrivacy && <PrivacySettingsControls />}
 
       <Panel title="Acessibilidade">
         <div className="space-y-5 py-2">
