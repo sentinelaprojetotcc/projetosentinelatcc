@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { db } from "./db.server";
-import { cpfValido, emailValido, orgaoValido, senhaForte, somenteDigitos } from "./institutional-validation";
+import { cpfValido, emailValido, orgaoValido, senhaMinimaValida, somenteDigitos } from "./institutional-validation";
 
 type AgentApplicationInput = {
   name: string;
@@ -38,9 +38,9 @@ export async function submitAgentApplication(input: AgentApplicationInput) {
   const email = input.email.trim().toLowerCase();
   const cpf = somenteDigitos(input.cpf);
   if (name.length < 3 || name.length > 160) throw new Error("Informe seu nome completo.");
-  if (!cpfValido(cpf)) throw new Error("CPF inválido.");
+  if (!cpfValido(cpf)) throw new Error("O CPF deve conter exatamente 11 números.");
   if (!emailValido(email)) throw new Error("E-mail inválido.");
-  if (!senhaForte(input.password)) throw new Error("A senha deve incluir ao menos 10 caracteres, maiúscula, minúscula, número e símbolo.");
+  if (!senhaMinimaValida(input.password)) throw new Error("A senha deve conter no mínimo 8 caracteres.");
   if (!orgaoValido(input.institution)) throw new Error("Selecione um órgão autorizado.");
 
   const storage = (env as unknown as { AGENT_DOCUMENTS?: PrivateR2 }).AGENT_DOCUMENTS;
