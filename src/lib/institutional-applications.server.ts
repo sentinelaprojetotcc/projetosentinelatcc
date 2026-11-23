@@ -38,7 +38,7 @@ export async function submitAgentApplication(input: AgentApplicationInput) {
   const email = input.email.trim().toLowerCase();
   const cpf = somenteDigitos(input.cpf);
   if (name.length < 3 || name.length > 160) throw new Error("Informe seu nome completo.");
-  if (!cpfValido(cpf)) throw new Error("O CPF deve conter exatamente 11 números.");
+  if (!cpfValido(input.cpf)) throw new Error("O CPF deve conter exatamente 11 números.");
   if (!emailValido(email)) throw new Error("E-mail inválido.");
   if (!senhaMinimaValida(input.password)) throw new Error("A senha deve conter no mínimo 8 caracteres.");
   if (!orgaoValido(input.institution)) throw new Error("Selecione um órgão autorizado.");
