@@ -25,6 +25,11 @@ export function senhaMinimaValida(senha: string) {
   return senha.length >= 8;
 }
 
+/** Código fixo exclusivo do protótipo; não deve autorizar acesso em produção. */
+export function codigoAuditorValido(valor: string) {
+  return valor.toUpperCase() === "AUDIT26";
+}
+
 export const ORGAOS_SEGURANCA = [
   "Polícia Militar (PM)",
   "Polícia Civil (PC)",
