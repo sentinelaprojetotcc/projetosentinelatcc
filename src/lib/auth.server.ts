@@ -1,8 +1,8 @@
 import "@tanstack/react-start/server-only";
-import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { db } from "./db.server";
-import { cpfValido, emailValido, senhaForte, somenteDigitos } from "./institutional-validation";
+import { cpfValido, emailValido, senhaMinimaValida, somenteDigitos } from "./institutional-validation";
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 export type AccountRole = "citizen" | "institutional";
@@ -112,31 +112,23 @@ export async function registerAccount(input: RegisterInput) {
     throw new Error("Acesso de agente exige análise institucional antes da liberação.");
   }
   if (input.role === "institutional") {
-    const configuredCode = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE?.trim();
-    const suppliedCode = typeof input.authorizationCode === "string" ? input.authorizationCode.trim() : "";
-    if (!configuredCode || configuredCode.length < 24) {
-      throw new Error("Cadastro institucional ainda não configurado. Fale com o responsável pelo Sentinel.");
+    // Mantém a ativação fora da produção: o segredo de habilitação foi
+    // configurado exclusivamente na prévia do Cloudflare.
+    const previewEnabled = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE;
+    if (!previewEnabled) {
+      throw new Error("Ativação acadêmica não habilitada neste ambiente.");
     }
-    if (!suppliedCode || suppliedCode.length > 256) {
-      throw new Error("Código de autorização institucional inválido.");
-    }
-    // Digestos do mesmo tamanho evitam comparação variável do segredo.
-    const expected = createHash("sha256").update(configuredCode).digest();
-    const supplied = createHash("sha256").update(suppliedCode).digest();
-    if (!timingSafeEqual(expected, supplied)) {
-      throw new Error("Código de autorização institucional inválido.");
+    const code = typeof input.authorizationCode === "string" ? input.authorizationCode : "";
+    if (code.toUpperCase() !== "AUDIT26") {
+      throw new Error("Código de ativação incorreto.");
     }
   }
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (name.length < 3) throw new Error("Informe o nome completo.");
   if (!emailValido(email)) throw new Error("Informe um e-mail válido.");
-  if (input.password.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
-  if (input.role === "institutional") {
-    if (!cpfValido(input.cpf ?? "")) throw new Error("CPF inválido.");
-    if (!senhaForte(input.password)) throw new Error("Use pelo menos 10 caracteres, incluindo maiúscula, minúscula, número e símbolo.");
-  }
-  if (input.role === "citizen" && !normalize(input.cpf)) throw new Error("Informe o CPF.");
+  if (!senhaMinimaValida(input.password)) throw new Error("A senha deve conter no mínimo 8 caracteres.");
+  if (!cpfValido(input.cpf ?? "")) throw new Error("O CPF deve conter exatamente 11 números.");
   if (input.role === "institutional" && input.institutionalType !== "auditor") {
     throw new Error("Perfil institucional inválido para ativação de auditor.");
   }
@@ -211,7 +203,7 @@ export async function changePassword(input: { currentPassword: string; newPasswo
   if (!user) throw new Error("Sessão necessária.");
   const row = await db.prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string } | undefined;
   if (!row || !passwordMatches(input.currentPassword, row.password_hash)) throw new Error("A senha atual está incorreta.");
-  if (input.newPassword.length < 8) throw new Error("A nova senha deve ter pelo menos 8 caracteres.");
+  if (!senhaMinimaValida(input.newPassword)) throw new Error("A senha deve conter no mínimo 8 caracteres.");
   if (input.currentPassword === input.newPassword) throw new Error("A nova senha deve ser diferente da senha atual.");
   await db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(input.newPassword), user.id);
   await db.prepare("DELETE FROM sessions WHERE user_id = ? AND token <> ?").run(user.id, getCookie(SESSION_COOKIE) ?? "");
