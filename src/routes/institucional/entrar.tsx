@@ -38,7 +38,7 @@ function LoginOrgao() {
           {error && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</Button>
           {failedAttempts >= 3 && <Link to="/institucional/esqueci-senha" className="block text-center text-xs text-primary hover:underline">Esqueceu a senha?</Link>}
-          <p className="text-center text-xs text-muted-foreground">Novos acessos institucionais exigem autorização do responsável pelo Sentinel.</p>
+          <Button type="button" variant="secondary" className="w-full" asChild><Link to="/institucional/cadastro">Criar conta institucional</Link></Button>
           <Link to="/acesso" className="block text-center text-xs text-muted-foreground hover:text-foreground">Voltar</Link>
         </form>
         <p className="mt-5 flex items-center justify-center gap-2 text-xs text-warning"><ShieldAlert className="size-4" /> Acesso restrito a usuários cadastrados.</p>
