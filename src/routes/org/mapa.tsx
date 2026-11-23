@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { CitizenHeatmap } from "@/components/sentinela/citizen-heatmap";
 import { PageHeader, Panel, Disclaimer } from "@/components/sentinela/ui-kit";
 import { TacticalMap } from "@/components/sentinela/tactical-map";
 import { MapFilters, defaultMapFilters, type MapFilterState } from "@/components/sentinela/filters";
@@ -24,6 +25,18 @@ export const Route = createFileRoute("/org/mapa")({
 });
 
 function OrgMapa() {
+  const { user } = getRouteApi("/org").useRouteContext();
+  if (user.institutionalType === "agent") {
+    // Mesmo componente, fonte de dados, marcadores e mapa usados no perfil da População.
+    return <div className="space-y-6">
+      <PageHeader title="Início" description="Mapa de calor compartilhado das ocorrências do Sentinela." />
+      <CitizenHeatmap />
+    </div>;
+  }
+  return <AuditorMapa />;
+}
+
+function AuditorMapa() {
   const [place, setPlace] = useState("");
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [filters, setFilters] = useState<MapFilterState>(defaultMapFilters);
