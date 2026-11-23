@@ -4,6 +4,7 @@ import { PageHeader, Panel, StatCard, Disclaimer } from "@/components/sentinela/
 import { TrendChart, BarsChart, DonutChart, ChartLegend } from "@/components/sentinela/charts";
 import { Button } from "@/components/ui/button";
 import { listRecordsFn, type ManagedRecord } from "@/lib/records";
+import { AgentAnalyses } from "./analises";
 
 export const Route = createFileRoute("/org/")({
   head: () => ({ meta: [{ title: "Dashboard operacional — Sentinela Institucional" }] }),
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/org/")({
 type DashboardData = { occurrences: ManagedRecord[]; predictions: ManagedRecord[]; notifications: ManagedRecord[]; contests: ManagedRecord[]; biasAlerts: ManagedRecord[] };
 const empty: DashboardData = { occurrences: [], predictions: [], notifications: [], contests: [], biasAlerts: [] };
 
-function OrgDashboard() {
+export function OrgDashboard() {
   const { user } = getRouteApi("/org").useRouteContext();
   const [data, setData] = useState(empty);
   useEffect(() => { void Promise.all([
@@ -27,7 +28,7 @@ function OrgDashboard() {
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <DashboardLink to={user.institutionalType === "agent" ? "/org/ocorrencias" : "/org/auditoria"} label="Abrir registros relacionados"><StatCard label="Ocorrências (30 dias)" value={String(metrics.recent.length)} /></DashboardLink>
       <DashboardLink to={user.institutionalType === "agent" ? "/org/ocorrencias" : "/org/auditoria"} label="Abrir ocorrências confirmadas"><StatCard label="Confirmadas" value={String(metrics.confirmed)} tone="success" delta={percent(metrics.confirmed, metrics.recent.length)} /></DashboardLink>
-      <DashboardLink to={user.institutionalType === "agent" ? "/org/populacao" : "/org/auditoria"} label="Abrir registros da população"><StatCard label="Origem população" value={String(metrics.population)} delta={percent(metrics.population, metrics.recent.length)} /></DashboardLink>
+      <DashboardLink to={user.institutionalType === "agent" ? "/org/ocorrencias" : "/org/auditoria"} label="Abrir registros da população"><StatCard label="Origem população" value={String(metrics.population)} delta={percent(metrics.population, metrics.recent.length)} /></DashboardLink>
       <DashboardLink to={user.institutionalType === "agent" ? "/org/ocorrencias" : "/org/auditoria"} label="Abrir registros policiais"><StatCard label="Origem registros policiais" value={String(metrics.police)} delta={percent(metrics.police, metrics.recent.length)} /></DashboardLink>
       <DashboardLink to="/org/previsoes" label="Abrir previsões"><StatCard label="Confiabilidade média das previsões" value={`${metrics.predictionConfidence}%`} hint="Média das previsões cadastradas no banco." /></DashboardLink>
       <DashboardLink to="/org/previsoes" label="Abrir áreas em atenção"><StatCard label="Áreas em atenção" value={String(metrics.attentionAreas)} tone="warning" /></DashboardLink>
@@ -42,13 +43,22 @@ function OrgDashboard() {
       <Panel title="Mapa operacional resumido" subtitle="Concentração histórica agregada de ocorrências; não representa locais ou pessoas criminosas." action={<Button asChild size="sm" variant="secondary"><Link to="/org/mapa">Abrir mapa completo</Link></Button>}>
         {metrics.riskRegions.length === 0 ? <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">O mapa resumido aparecerá após registros com região.</p> : <div className="grid min-h-48 grid-cols-2 gap-3 rounded-xl border border-border bg-background/40 p-4 sm:grid-cols-3 lg:grid-cols-4">{metrics.riskRegions.map((item, index) => <Link key={item.region} to="/org/mapa" className={`flex min-h-20 flex-col justify-between rounded-xl border p-3 transition hover:border-primary ${index === 0 ? "border-warning/60 bg-warning/10" : index < 3 ? "border-primary/40 bg-primary/8" : "border-border bg-secondary/30"}`}><span className="text-xs font-semibold">{item.region}</span><span className="mt-3 text-xs text-muted-foreground">{item.total} ocorrências</span></Link>)}</div>}
       </Panel>
-      <Panel title="Alertas importantes" subtitle="Itens que merecem atenção antes de uma decisão.">{metrics.importantAlerts.length === 0 ? <p className="flex h-48 items-center justify-center text-center text-sm text-muted-foreground">Nenhum alerta ativo.</p> : <div className="space-y-3">{metrics.importantAlerts.slice(0, 5).map((item) => <Link key={`${item.kind}-${item.id}`} to={item.kind === "bias" ? "/org/alertas-vies" : "/org/notificacoes"} className="block rounded-lg border p-3 transition hover:border-primary/50"><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details || item.status}</p></Link>)}</div>}</Panel>
+      <Panel title="Alertas importantes" subtitle="Itens que merecem atenção antes de uma decisão.">{metrics.importantAlerts.length === 0 ? <p className="flex h-48 items-center justify-center text-center text-sm text-muted-foreground">Nenhum alerta ativo.</p> : <div className="space-y-3">{metrics.importantAlerts.slice(0, 5).map((item) => <Link key={`${item.kind}-${item.id}`} to={item.kind === "bias" ? "/org/decisoes-ia" : "/org/notificacoes"} className="block rounded-lg border p-3 transition hover:border-primary/50"><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details || item.status}</p></Link>)}</div>}</Panel>
     </div>}
     <div className="grid gap-4 xl:grid-cols-3">
       <Panel title="Ocorrências por dia da semana"><ChartOrEmpty empty={metrics.weekdays.every((item) => item.ocorrencias === 0)}><BarsChart data={metrics.weekdays} xKey="dia" /></ChartOrEmpty></Panel>
       <Panel title="Horários de maior concentração"><ChartOrEmpty empty={metrics.hours.every((item) => item.ocorrencias === 0)}><BarsChart data={metrics.hours} xKey="hora" /></ChartOrEmpty></Panel>
       <Panel title="Origem das ocorrências"><ChartOrEmpty empty={metrics.bySource.length === 0}><DonutChart data={metrics.bySource} nameKey="origem" height={190} /><ChartLegend items={metrics.bySource.map((item) => ({ label: String(item.origem), value: String(item.valor) }))} /></ChartOrEmpty></Panel>
     </div>
+    {user.institutionalType === "agent" && (
+      <section className="space-y-4 border-t border-border pt-6" aria-labelledby="analises-detalhadas">
+        <h2 id="analises-detalhadas" className="font-sans text-xl font-semibold">Análises detalhadas</h2>
+        <p className="text-sm text-muted-foreground">
+          Indicadores adicionais de confirmação e distribuição das ocorrências, calculados a partir dos registros reais.
+        </p>
+        <AgentAnalyses embedded />
+      </section>
+    )}
     <Disclaimer>Todos os números acima são calculados diretamente das tabelas do banco de dados. Nenhum valor demonstrativo é exibido.</Disclaimer>
   </div>;
 }
