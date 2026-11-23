@@ -12,27 +12,17 @@ export function formatarCPF(valor: string) {
     .replace(/\.(\d{3})(\d)/, ".$1-$2");
 }
 
+/** Protótipo acadêmico: valida apenas a presença de exatamente 11 dígitos. */
 export function cpfValido(valor: string) {
-  const n = somenteDigitos(valor);
-  if (n.length !== 11 || /^(\d)\1{10}$/.test(n)) return false;
-  for (let tamanho = 9; tamanho < 11; tamanho++) {
-    let soma = 0;
-    for (let i = 0; i < tamanho; i++) soma += Number(n[i]) * (tamanho + 1 - i);
-    const resto = (soma * 10) % 11;
-    const digito = resto === 10 ? 0 : resto;
-    if (digito !== Number(n[tamanho])) return false;
-  }
-  return true;
+  return somenteDigitos(valor).length === 11;
 }
 
 export function emailValido(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && email.length <= 254;
 }
 
-export function senhaForte(senha: string) {
-  return senha.length >= 10 && senha.length <= 128 &&
-    /[a-z]/.test(senha) && /[A-Z]/.test(senha) &&
-    /\d/.test(senha) && /[^A-Za-z\d]/.test(senha);
+export function senhaMinimaValida(senha: string) {
+  return senha.length >= 8;
 }
 
 export const ORGAOS_SEGURANCA = [
