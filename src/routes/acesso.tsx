@@ -55,19 +55,20 @@ function Acesso() {
             </Button>
           </article>
 
-          <article className="surface-card group flex flex-col p-7 transition-all hover:glow-ring">
+          <Link to="/institucional/entrar" aria-label="Acesso Institucional — escolher perfil"
+            className="surface-card group flex flex-col rounded-xl p-7 transition-all duration-200 hover:border-primary/60 hover:glow-ring focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
             <span className="flex size-12 items-center justify-center rounded-xl bg-secondary text-primary">
-              <Building2 className="size-6" />
+              <Building2 className="size-6" aria-hidden="true" />
             </span>
             <h2 className="mt-5 font-sans text-xl font-semibold">Acesso Institucional</h2>
             <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
               Monitore ocorrências, analise padrões, acompanhe previsões e gerencie informações de
               segurança.
             </p>
-            <Button asChild variant="secondary" className="mt-6">
-              <Link to="/institucional/entrar">Entrar como órgão público</Link>
-            </Button>
-          </article>
+            <span className="mt-6 inline-flex min-h-10 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-secondary-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              Escolher perfil institucional
+            </span>
+          </Link>
 
           <article className="surface-card group flex flex-col p-7 transition-all hover:glow-ring md:col-span-2 md:flex-row md:items-center md:gap-6">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
