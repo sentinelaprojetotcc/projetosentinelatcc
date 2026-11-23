@@ -233,7 +233,7 @@ function CadastroInstitucional() {
                         <span className="mt-1 text-xs text-muted-foreground">{file ? file.name : "Arraste o arquivo até aqui ou clique para selecionar"}</span>
                         <span className="mt-2 text-xs text-muted-foreground">{file ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "Somente PDF • Máximo de 10 MB"}</span>
                         <input id="documento-agente" type="file" accept=".pdf,application/pdf" className="sr-only"
-                          onChange={(event) => selecionarPDF(event.target.files?.[0])} />
+                          onChange={(event) => { selecionarPDF(event.target.files?.[0]); event.currentTarget.value = ""; }} />
                       </label>
                       {file && <button type="button" onClick={() => setFile(null)}
                         className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-destructive">
