@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { addRecordFn, listRecordsFn, type ManagedRecord } from "@/lib/records";
+import { AgentBiasAlerts } from "./alertas-vies";
 import { PageHeader, Panel, StatusPill, Disclaimer } from "@/components/sentinela/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,11 @@ function VerificacaoDecisao() {
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}<Button type="submit">Registrar decisão</Button>
     </form></Panel>
     <Panel title="Histórico de decisões" subtitle="Consulte a decisão humana e abra sua trilha de auditoria." action={<div className="flex flex-wrap gap-2"><select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>Todos</option>{[...new Set(records.map((item) => item.status))].map((item) => <option key={item}>{item}</option>)}</select><select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={reviewFilter} onChange={(event) => setReviewFilter(event.target.value)}><option>Todos</option><option>Revisão necessária</option><option>Sem revisão pendente</option></select><div className="relative"><Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input className="w-56 pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Área, tipo ou resultado" /></div></div>}><DecisionHistory records={records.filter((record) => { const needsReview = /revisão solicitada|necessita revisão|pendente/i.test(`${record.status} ${record.details}`); return `${record.title} ${record.region} ${record.details}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")) && (statusFilter === "Todos" || record.status === statusFilter) && (reviewFilter === "Todos" || (reviewFilter === "Revisão necessária" ? needsReview : !needsReview)); })} opened={opened} setOpened={setOpened} /></Panel>
+    <section id="alertas-de-disparidade" className="space-y-4 border-t border-border pt-6" aria-labelledby="titulo-disparidades">
+      <h2 id="titulo-disparidades" className="font-sans text-xl font-semibold">Alertas de disparidade</h2>
+      <p className="text-sm text-muted-foreground">Investigue possíveis vieses e solicite revisão humana antes de tomar decisões operacionais.</p>
+      <AgentBiasAlerts embedded />
+    </section>
     <Disclaimer>O registro cria uma trilha rastreável. A IA não autoriza abordagens nem substitui avaliação humana contextual.</Disclaimer>
   </div>;
 }
