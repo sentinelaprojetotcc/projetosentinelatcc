@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import {
-  BarChart3,
   Bell,
   FileBarChart,
   Gauge,
@@ -10,16 +9,13 @@ import {
   ScrollText,
   Settings,
   Sparkles,
-  Users,
   LogOut,
   ShieldCheck,
   Route as RouteIcon,
-  Lightbulb,
   Scale,
   DatabaseZap,
   GitCompareArrows,
   Wrench,
-  TriangleAlert,
   Bot,
 } from "lucide-react";
 import { AppShell, type NavItem } from "@/components/sentinela/shell";
