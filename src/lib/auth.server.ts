@@ -1,5 +1,6 @@
 import "@tanstack/react-start/server-only";
-import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { env } from "cloudflare:workers";
 import { db } from "./db.server";
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
@@ -36,6 +37,8 @@ export type RegisterInput = {
   institution?: string;
   functionalId?: string;
   institutionalType?: InstitutionalType;
+  // Necessário somente para contas institucionais autorizadas.
+  authorizationCode?: string;
   latitude?: number;
   longitude?: number;
   locationConsent?: boolean;
@@ -100,10 +103,26 @@ async function createSession(userId: string) {
 }
 
 export async function registerAccount(input: RegisterInput) {
-  // Não permita que uma chamada pública crie contas de agente ou auditor.
-  // O provisionamento institucional exige um fluxo administrativo separado.
-  if (!input || input.role !== "citizen") {
-    throw new Error("Cadastro institucional indisponível: solicite autorização ao responsável pelo Sentinel.");
+  if (!input || (input.role !== "citizen" && input.role !== "institutional")) {
+    throw new Error("Tipo de cadastro inválido.");
+  }
+  // Uma pessoa não pode se atribuir acesso policial/auditor apenas enviando
+  // role='institutional' para a função do servidor.
+  if (input.role === "institutional") {
+    const configuredCode = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE?.trim();
+    const suppliedCode = typeof input.authorizationCode === "string" ? input.authorizationCode.trim() : "";
+    if (!configuredCode || configuredCode.length < 24) {
+      throw new Error("Cadastro institucional ainda não configurado. Fale com o responsável pelo Sentinel.");
+    }
+    if (!suppliedCode || suppliedCode.length > 256) {
+      throw new Error("Código de autorização institucional inválido.");
+    }
+    // Digestos do mesmo tamanho evitam comparação variável do segredo.
+    const expected = createHash("sha256").update(configuredCode).digest();
+    const supplied = createHash("sha256").update(suppliedCode).digest();
+    if (!timingSafeEqual(expected, supplied)) {
+      throw new Error("Código de autorização institucional inválido.");
+    }
   }
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
@@ -114,7 +133,9 @@ export async function registerAccount(input: RegisterInput) {
   if (input.role === "institutional" && (!normalize(input.institution) || !normalize(input.functionalId))) {
     throw new Error("Informe o órgão e a identificação funcional.");
   }
-  if (input.role === "institutional" && !input.institutionalType) throw new Error("Selecione o perfil institucional.");
+  if (input.role === "institutional" && input.institutionalType !== "agent" && input.institutionalType !== "auditor") {
+    throw new Error("Selecione um perfil institucional válido.");
+  }
 
   try {
     const id = randomUUID();
