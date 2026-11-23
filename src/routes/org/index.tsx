@@ -32,8 +32,8 @@ export function OrgDashboard() {
       <DashboardLink to={user.institutionalType === "agent" ? "/org/ocorrencias" : "/org/auditoria"} label="Abrir registros policiais"><StatCard label="Origem registros policiais" value={String(metrics.police)} delta={percent(metrics.police, metrics.recent.length)} /></DashboardLink>
       <DashboardLink to="/org/previsoes" label="Abrir previsões"><StatCard label="Confiabilidade média das previsões" value={`${metrics.predictionConfidence}%`} hint="Média das previsões cadastradas no banco." /></DashboardLink>
       <DashboardLink to="/org/previsoes" label="Abrir áreas em atenção"><StatCard label="Áreas em atenção" value={String(metrics.attentionAreas)} tone="warning" /></DashboardLink>
-      <DashboardLink to="/org/notificacoes" label="Abrir alertas ativos"><StatCard label="Alertas ativos" value={String(metrics.activeAlerts)} tone="danger" /></DashboardLink>
-      <DashboardLink to={user.institutionalType === "auditor" ? "/org/contestacoes" : "/org/notificacoes"} label="Abrir contestações pendentes"><StatCard label="Contestações pendentes" value={String(metrics.pendingContests)} tone="warning" /></DashboardLink>
+      {user.institutionalType === "agent" ? <StatCard label="Alertas ativos" value={String(metrics.activeAlerts)} tone="danger" hint="Acesse notificações pelo sino no cabeçalho." /> : <DashboardLink to="/org/notificacoes" label="Abrir alertas ativos"><StatCard label="Alertas ativos" value={String(metrics.activeAlerts)} tone="danger" /></DashboardLink>}
+      {user.institutionalType === "agent" ? <StatCard label="Contestações pendentes" value={String(metrics.pendingContests)} tone="warning" hint="Acompanhe atualizações no sino do cabeçalho." /> : <DashboardLink to="/org/contestacoes" label="Abrir contestações pendentes"><StatCard label="Contestações pendentes" value={String(metrics.pendingContests)} tone="warning" /></DashboardLink>}
     </div>
     <div className="grid gap-4 xl:grid-cols-3">
       <Panel title="Evolução das ocorrências (3 meses)" className="xl:col-span-2"><ChartOrEmpty empty={metrics.monthly.every((item) => item.ocorrencias === 0)}><TrendChart data={metrics.monthly} height={260} /></ChartOrEmpty></Panel>
@@ -43,7 +43,15 @@ export function OrgDashboard() {
       <Panel title="Mapa operacional resumido" subtitle="Concentração histórica agregada de ocorrências; não representa locais ou pessoas criminosas." action={<Button asChild size="sm" variant="secondary"><Link to="/org/mapa">Abrir mapa completo</Link></Button>}>
         {metrics.riskRegions.length === 0 ? <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">O mapa resumido aparecerá após registros com região.</p> : <div className="grid min-h-48 grid-cols-2 gap-3 rounded-xl border border-border bg-background/40 p-4 sm:grid-cols-3 lg:grid-cols-4">{metrics.riskRegions.map((item, index) => <Link key={item.region} to="/org/mapa" className={`flex min-h-20 flex-col justify-between rounded-xl border p-3 transition hover:border-primary ${index === 0 ? "border-warning/60 bg-warning/10" : index < 3 ? "border-primary/40 bg-primary/8" : "border-border bg-secondary/30"}`}><span className="text-xs font-semibold">{item.region}</span><span className="mt-3 text-xs text-muted-foreground">{item.total} ocorrências</span></Link>)}</div>}
       </Panel>
-      <Panel title="Alertas importantes" subtitle="Itens que merecem atenção antes de uma decisão.">{metrics.importantAlerts.length === 0 ? <p className="flex h-48 items-center justify-center text-center text-sm text-muted-foreground">Nenhum alerta ativo.</p> : <div className="space-y-3">{metrics.importantAlerts.slice(0, 5).map((item) => <Link key={`${item.kind}-${item.id}`} to={item.kind === "bias" ? "/org/decisoes-ia" : "/org/notificacoes"} className="block rounded-lg border p-3 transition hover:border-primary/50"><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details || item.status}</p></Link>)}</div>}</Panel>
+      <Panel title="Alertas importantes" subtitle="Itens que merecem atenção antes de uma decisão.">{metrics.importantAlerts.length === 0 ? <p className="flex h-48 items-center justify-center text-center text-sm text-muted-foreground">Nenhum alerta ativo.</p> : <div className="space-y-3">{metrics.importantAlerts.slice(0, 5).map((item) => item.kind === "bias"
+  ? <Link key={`${item.kind}-${item.id}`} to="/org/decisoes-ia" className="block rounded-lg border p-3 transition hover:border-primary/50">
+      <p className="text-sm font-semibold">{item.title}</p>
+      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details || item.status}</p>
+    </Link>
+  : <div key={`${item.kind}-${item.id}`} className="rounded-lg border p-3">
+      <p className="text-sm font-semibold">{item.title}</p>
+      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details || item.status}</p>
+    </div>)}</div>}</Panel>
     </div>}
     <div className="grid gap-4 xl:grid-cols-3">
       <Panel title="Ocorrências por dia da semana"><ChartOrEmpty empty={metrics.weekdays.every((item) => item.ocorrencias === 0)}><BarsChart data={metrics.weekdays} xKey="dia" /></ChartOrEmpty></Panel>
