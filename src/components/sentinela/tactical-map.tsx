@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type Map as MapLibreMap, type GeoJSONSource } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { filteredHeatmapDataFn } from "@/lib/records";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ export function TacticalMap({ className, compact = false, filters, focusCoordina
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     let cancelled = false;
+    let refreshTimer: ReturnType<typeof setInterval> | undefined;
     const map = new maplibregl.Map({
       container: containerRef.current,
       center: focusCoordinates ?? [-38.438, -12.94],
@@ -89,6 +90,28 @@ export function TacticalMap({ className, compact = false, filters, focusCoordina
           },
         });
         setTotal(points.reduce((sum, point) => sum + point.count, 0));
+        // Atualiza a mesma camada de ocorrências em todos os perfis sem recarregar o mapa.
+        // A filtragem continua sendo feita na fonte D1 compartilhada.
+        refreshTimer = setInterval(async () => {
+          try {
+            const latest = await filteredHeatmapDataFn({ data: filters ?? {} }) as HeatPoint[];
+            if (cancelled) return;
+            const updated: HeatFeatureCollection = {
+              type: "FeatureCollection",
+              features: latest.map((point) => ({
+                type: "Feature",
+                properties: { region: point.region, count: point.count },
+                geometry: { type: "Point", coordinates: [point.longitude, point.latitude] },
+              })),
+            };
+            const source = map.getSource("occurrences-heat") as GeoJSONSource | undefined;
+            source?.setData(updated);
+            setTotal(latest.reduce((sum, point) => sum + point.count, 0));
+            setError("");
+          } catch {
+            if (!cancelled) setError("Não foi possível atualizar os dados do mapa agora.");
+          }
+        }, 30000);
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : "Não foi possível carregar as ocorrências.");
       } finally {
@@ -97,7 +120,7 @@ export function TacticalMap({ className, compact = false, filters, focusCoordina
     });
 
     mapRef.current = map;
-    return () => { cancelled = true; map.remove(); mapRef.current = null; };
+    return () => { cancelled = true; if (refreshTimer) clearInterval(refreshTimer); map.remove(); mapRef.current = null; };
   }, [compact, filters?.period, filters?.type, filters?.time, filters?.weekday, filters?.source, filters?.status, filters?.confidence]);
 
   useEffect(() => {
