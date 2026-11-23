@@ -10,7 +10,7 @@ O backend só cadastra uma conta institucional se receber um `authorizationCode`
 
 ## Configurar na prévia do Cloudflare
 
-O Wrangler já está autenticado e a prévia usa o banco `sentinela-db-preview`.
+O Wrangler já está autenticado e a prévia usa o banco `sentinela-db-preview`. O Worker remoto deste repositório chama-se `projetosentinelatcc` (o nome local em `wrangler.jsonc` é `sentinela-tcc`), por isso é necessário informar `--worker-name projetosentinelatcc` nos comandos de segredo da prévia.
 
 1. Abra o terminal PowerShell na pasta do projeto.
 2. Gere um código aleatório forte. Exemplo compatível com Windows PowerShell:
@@ -26,7 +26,7 @@ O Wrangler já está autenticado e a prévia usa o banco `sentinela-db-preview`.
 3. Grave o código **somente na prévia já existente** (o valor não precisa aparecer no histórico do shell):
 
    ```powershell
-   $codigo | bunx wrangler preview secret put INSTITUTIONAL_SIGNUP_CODE --name feat-cloudflare-d1-migracao
+   $codigo | bunx wrangler preview secret put INSTITUTIONAL_SIGNUP_CODE --name feat-cloudflare-d1-migracao --worker-name projetosentinelatcc
    ```
 
 4. Guarde o valor de `$codigo` em gerenciador de senhas protegido. Compartilhe-o somente com pessoas de teste autorizadas. Não o cole no chat, envie em prints, crie arquivos versionados ou use valores previsíveis.
