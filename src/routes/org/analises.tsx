@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel, StatCard } from "@/components/sentinela/ui-kit";
 import { listRecordsFn, type ManagedRecord } from "@/lib/records";
 
-export const Route = createFileRoute("/org/analises")({ component: Analises });
+export const Route = createFileRoute("/org/analises")({ component: AgentAnalyses });
 
-function Analises() {
+export function AgentAnalyses({ embedded = false }: { embedded?: boolean }) {
   const [occurrences, setOccurrences] = useState<ManagedRecord[]>([]);
   useEffect(() => { void listRecordsFn({ data: { kind: "occurrences" } }).then(setOccurrences); }, []);
   const stats = useMemo(() => {
@@ -16,10 +16,10 @@ function Analises() {
   }, [occurrences]);
 
   return <div className="space-y-6">
-    <PageHeader title="Análises" description="Indicadores calculados automaticamente a partir das ocorrências cadastradas." />
+    {!embedded && <PageHeader title="Análises" description="Indicadores calculados automaticamente a partir das ocorrências cadastradas." />}
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard label="Total de ocorrências" value={String(occurrences.length)} />
-      <StatCard label="Ocorrências confirmadas" value={String(stats.confirmed)} tone="success" />
+      {!embedded && <StatCard label="Total de ocorrências" value={String(occurrences.length)} />}
+      {!embedded && <StatCard label="Ocorrências confirmadas" value={String(stats.confirmed)} tone="success" />}
       <StatCard label="Taxa de confirmação" value={occurrences.length ? `${Math.round(stats.confirmed / occurrences.length * 100)}%` : "0%"} />
       <StatCard label="Confiabilidade média" value={`${stats.average}%`} />
     </div>
