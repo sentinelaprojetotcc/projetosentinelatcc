@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Filter, Search, ChevronDown } from "lucide-react";
 import { Panel, Disclaimer } from "@/components/sentinela/ui-kit";
 import { TacticalMap } from "@/components/sentinela/tactical-map";
-import { MapFilters, defaultMapFilters, type MapFilterState } from "@/components/sentinela/filters";
+import { CoreMapFilters, defaultCoreMapFilters, type CoreMapFilterState } from "@/components/sentinela/filters";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -11,7 +11,7 @@ export function CitizenHeatmap() {
   const [place, setPlace] = useState("");
   const [searchedPlace, setSearchedPlace] = useState("");
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
-  const [filters, setFilters] = useState<MapFilterState>({ ...defaultMapFilters });
+  const [filters, setFilters] = useState<CoreMapFilterState>({ ...defaultCoreMapFilters });
   const [showFilters, setShowFilters] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -36,7 +36,7 @@ export function CitizenHeatmap() {
         <div className="min-h-0 overflow-hidden">
           {showFilters && (
             <div className="space-y-3 pb-2">
-              <MapFilters value={filters} onChange={setFilters} citizen />
+              <CoreMapFilters value={filters} onChange={setFilters} />
               <Panel title="Pesquisar local do Brasil" subtitle="Informe cidade, bairro ou estado para consultar a área desejada.">
                 <form className="flex flex-col gap-3 sm:flex-row" onSubmit={async (event) => {
                   event.preventDefault();
