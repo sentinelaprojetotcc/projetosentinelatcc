@@ -5,6 +5,7 @@ import { Panel, StatCard, Disclaimer, PageHeader, LumiaCard, StatusPill } from "
 import { TrendChart, BarsChart } from "@/components/sentinela/charts";
 import { Button } from "@/components/ui/button";
 import { citizenDashboardFn, myCitizenAlertsFn } from "@/lib/records";
+import { CitizenHeatmap } from "@/components/sentinela/citizen-heatmap";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({ meta: [{ title: "Início — Painel da população | Sentinela" }] }),
@@ -26,6 +27,7 @@ function CitizenHome() {
   const situation = !hasData ? "Normal" : (stats?.recent ?? 0) >= 15 ? "Alerta" : (stats?.recent ?? 0) >= 5 ? "Atenção" : "Normal";
 
   return <div className="space-y-6">
+    <CitizenHeatmap />
     <PageHeader title={`Olá, ${firstName}`} description="Indicadores reais de segurança calculados para a sua região." action={<Button asChild><Link to="/app/registrar">Registrar ocorrência</Link></Button>} />
     <div className="grid gap-4 md:grid-cols-3">
       <Panel><p className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="size-4 text-primary" /> Sua região</p><p className="mt-2 font-sans text-lg font-semibold">{user.neighborhood ?? "Salvador"} · {user.city} — {user.state}</p></Panel>
