@@ -87,12 +87,17 @@ export function CitizenContestForm({ initialTargetId, onSuccess }: { initialTarg
       />
 
       <Panel title="O que você deseja contestar?">
-        <RadioGroup value={targetType} onValueChange={(value) => setTargetType(value as "occurrence" | "prediction")} className="grid gap-3 sm:grid-cols-2">
+        <RadioGroup value={targetType} onValueChange={(value) => {
+          const selectedKind = value as "occurrence" | "prediction";
+          setTargetType(selectedKind);
+          setTargetId(targets.find((item) => item.kind === selectedKind)?.id ?? "");
+          setError("");
+        }} className="grid gap-3 sm:grid-cols-2">
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-4"><RadioGroupItem value="occurrence" id="target-occurrence" /><Label htmlFor="target-occurrence">Decisão sobre uma ocorrência</Label></label>
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-4"><RadioGroupItem value="prediction" id="target-prediction" /><Label htmlFor="target-prediction">Previsão da IA</Label></label>
         </RadioGroup>
         <Label className="mt-5 block">Registro ou previsão relacionada</Label>
-        <select className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={targetId} onChange={(event) => { setTargetId(event.target.value); const selected = targets.find((item) => item.id === event.target.value); if (selected) setTargetType(selected.kind); }}><option value="">Selecione um registro</option>{targets.map((item) => <option key={`${item.kind}-${item.id}`} value={item.id}>{item.protocol} — {item.title}</option>)}</select>
+        <select className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={targetId} onChange={(event) => { setTargetId(event.target.value); const selected = targets.find((item) => item.id === event.target.value); if (selected) setTargetType(selected.kind); }}><option value="">Selecione um registro</option>{targets.filter((item) => item.kind === targetType).map((item) => <option key={`${item.kind}-${item.id}`} value={item.id}>{item.protocol} — {item.title}</option>)}</select>
       </Panel>
 
       <Panel title="Por que você deseja contestar esta decisão?">
@@ -118,7 +123,12 @@ export function CitizenContestForm({ initialTargetId, onSuccess }: { initialTarg
 
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
       <Button className="w-full" disabled={loading} onClick={async () => {
-        setError(""); setLoading(true);
+        setError("");
+        if (targetType === "prediction" && !targetId) {
+          setError("Selecione a previsão que deseja contestar.");
+          return;
+        }
+        setLoading(true);
         try { const result = await addCitizenContestFn({ data: { targetType, reason, details, targetId: targetId || undefined, evidenceName: evidence?.name, evidenceType: evidence?.type, evidenceData: evidence?.data } }); setProtocol(result.protocol); setSent(true); await onSuccess?.(); }
         catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível enviar a contestação."); }
         finally { setLoading(false); }
