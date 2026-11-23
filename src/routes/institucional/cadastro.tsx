@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, FileTe
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { InstitutionalField, InstitutionalPassword } from "@/components/institutional/fields";
-import { cpfValido, emailValido, formatarCPF, orgaoValido, ORGAOS_SEGURANCA, senhaForte } from "@/lib/institutional-validation";
+import { cpfValido, emailValido, formatarCPF, orgaoValido, ORGAOS_SEGURANCA, senhaMinimaValida } from "@/lib/institutional-validation";
 import { registerFn, submitAgentApplicationFn } from "@/lib/auth";
 
 export const Route = createFileRoute("/institucional/cadastro")({
@@ -25,9 +25,9 @@ type ErrorState = Partial<Record<keyof FormState | "file" | "general", string>>;
 function validar(form: FormState, perfil: "auditor" | "agente"): ErrorState {
   const errors: ErrorState = {};
   if (form.name.trim().length < 3) errors.name = "Informe seu nome completo.";
-  if (!cpfValido(form.cpf)) errors.cpf = "CPF inválido. Verifique os 11 dígitos.";
+  if (!cpfValido(form.cpf)) errors.cpf = "O CPF deve conter exatamente 11 números.";
   if (!emailValido(form.email)) errors.email = "Informe um e-mail válido.";
-  if (!senhaForte(form.password)) errors.password = "Use 10 a 128 caracteres com maiúscula, minúscula, número e símbolo.";
+  if (!senhaMinimaValida(form.password)) errors.password = "A senha deve conter no mínimo 8 caracteres.";
   if (form.password !== form.confirm) errors.confirm = "As senhas não coincidem.";
   if (perfil === "agente" && !orgaoValido(form.institution)) errors.institution = "Selecione uma instituição da lista.";
   return errors;
@@ -125,7 +125,7 @@ function CadastroInstitucional() {
         await registerFn({ data: {
           role: "institutional", institutionalType: "auditor",
           name: form.name.trim(), cpf: form.cpf, email: form.email.trim(),
-          password: form.password, authorizationCode: form.activationCode.trim(),
+          password: form.password, authorizationCode: form.activationCode,
           state: "BA", city: "Salvador",
         } });
         await navigate({ to: "/org" });
@@ -220,7 +220,7 @@ function CadastroInstitucional() {
                       <InstitutionalPassword id="confirmar-senha" label="Confirmar senha" value={form.confirm}
                         onChange={change("confirm")} error={errors.confirm} />
                     </div>
-                    <p className="text-xs text-muted-foreground">Use pelo menos 10 caracteres com letra maiúscula, minúscula, número e símbolo.</p>
+                    <p className="text-xs text-muted-foreground">A senha deve conter no mínimo 8 caracteres.</p>
                     {!auditor && <section className="space-y-3" aria-labelledby="documento-titulo">
                       <h2 id="documento-titulo" className="text-sm font-medium">Documento de identificação <span className="text-primary">*</span></h2>
                       <label htmlFor="documento-agente" onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
