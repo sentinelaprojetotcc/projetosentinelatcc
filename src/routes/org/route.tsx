@@ -74,6 +74,7 @@ function OrgLayout() {
     <AppShell
       nav={nav}
       title={profile}
+      showUnreadCount={user.institutionalType === "agent"}
       meta={`${user.institution ?? "Órgão público"} · ${user.city} — ${user.state}`}
       user={{ name: user.name, role: profile, initials }}
     >
