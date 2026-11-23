@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { StatusPill } from "./ui-kit";
 import { accessibilityPreferencesFn, changePasswordFn, saveAccessibilityPreferencesFn, updatePhoneFn, type AccessibilityPreferences, type SessionUser } from "@/lib/auth";
 import { applyAccessibilityPreferences } from "@/lib/accessibility";
+import { senhaMinimaValida } from "@/lib/institutional-validation";
 
 function Toggle({ label, hint, on = false, checked, onCheckedChange }: { label: string; hint?: string; on?: boolean; checked?: boolean; onCheckedChange?: (checked: boolean) => void }) {
   return (
@@ -52,6 +53,7 @@ export function SettingsView({ institutional = false, user }: { institutional?: 
           const formElement = event.currentTarget;
           const form = new FormData(formElement);
           const newPassword = String(form.get("newPassword"));
+          if (!senhaMinimaValida(newPassword)) { setPasswordStatus("A senha deve conter no mínimo 8 caracteres."); return; }
           if (newPassword !== String(form.get("confirmPassword"))) { setPasswordStatus("As novas senhas não coincidem."); return; }
           try { await changePasswordFn({ data: { currentPassword: String(form.get("currentPassword")), newPassword } }); setPasswordStatus("Senha alterada com sucesso."); formElement.reset(); }
           catch (cause) { setPasswordStatus(cause instanceof Error ? cause.message : "Não foi possível alterar a senha."); }
@@ -77,8 +79,12 @@ export function SettingsView({ institutional = false, user }: { institutional?: 
             <Label htmlFor="current-password">Senha atual</Label>
             <Input id="current-password" name="currentPassword" type="password" autoComplete="current-password" required />
           </div>
-          <div className="space-y-2"><Label htmlFor="new-password">Nova senha</Label><Input id="new-password" name="newPassword" type="password" minLength={8} autoComplete="new-password" required /></div>
-          <div className="space-y-2"><Label htmlFor="confirm-password">Confirmar nova senha</Label><Input id="confirm-password" name="confirmPassword" type="password" minLength={8} autoComplete="new-password" required /></div>
+          <div className="space-y-2"><Label htmlFor="new-password">Nova senha</Label><Input id="new-password" name="newPassword" type="password" minLength={8} autoComplete="new-password" required
+              onInvalid={(event) => { if (event.currentTarget.validity.tooShort) event.currentTarget.setCustomValidity("A senha deve conter no mínimo 8 caracteres."); }}
+              onInput={(event) => event.currentTarget.setCustomValidity("")} /></div>
+          <div className="space-y-2"><Label htmlFor="confirm-password">Confirmar nova senha</Label><Input id="confirm-password" name="confirmPassword" type="password" minLength={8} autoComplete="new-password" required
+              onInvalid={(event) => { if (event.currentTarget.validity.tooShort) event.currentTarget.setCustomValidity("A senha deve conter no mínimo 8 caracteres."); }}
+              onInput={(event) => event.currentTarget.setCustomValidity("")} /></div>
           {passwordStatus && <p className="text-sm text-muted-foreground sm:col-span-2" role="status">{passwordStatus}</p>}
           <div className="flex flex-wrap items-center gap-4 sm:col-span-2"><Button type="submit" size="sm">Alterar senha</Button>{!institutional && <Link to="/esqueci-senha" className="text-xs text-primary hover:underline">Esqueceu a senha?</Link>}</div>
         </form>
