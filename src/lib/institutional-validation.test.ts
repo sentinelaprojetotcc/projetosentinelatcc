@@ -1,28 +1,41 @@
 import { describe, expect, it } from "bun:test";
-import { cpfValido, emailValido, formatarCPF, orgaoValido, senhaForte } from "./institutional-validation";
+import {
+  codigoAuditorValido, cpfValido, emailValido, formatarCPF,
+  orgaoValido, senhaMinimaValida,
+} from "./institutional-validation";
 
-describe("Validações do acesso institucional", () => {
-  it("aplica máscara em CPF sem alterar os dígitos", () => {
-    expect(formatarCPF("52998224725")).toBe("529.982.247-25");
-    expect(formatarCPF("529.982.247-25")).toBe("529.982.247-25");
-  });
-
-  it("valida dígitos verificadores do CPF", () => {
-    expect(cpfValido("529.982.247-25")).toBe(true);
-    expect(cpfValido("52998224726")).toBe(false);
-    expect(cpfValido("111.111.111-11")).toBe(false);
+describe("Validações de cadastro do protótipo Sentinela", () => {
+  it("mantém a máscara de CPF e permite números fictícios", () => {
+    expect(formatarCPF("12345678901")).toBe("123.456.789-01");
+    expect(formatarCPF("123.456.789-01")).toBe("123.456.789-01");
+    expect(cpfValido("123.456.789-01")).toBe(true);
+    expect(cpfValido("52998224726")).toBe(true); // dígito verificador incorreto é permitido
+    expect(cpfValido("111.111.111-11")).toBe(true); // repetição permitida no protótipo
     expect(cpfValido("123")).toBe(false);
+    expect(cpfValido("123456789012")).toBe(false);
+    expect(cpfValido("")).toBe(false);
   });
 
-  it("rejeita e-mails inválidos e senhas fracas", () => {
+  it("aceita senhas a partir de oito caracteres sem outras regras", () => {
+    expect(senhaMinimaValida("12345678")).toBe(true);
+    expect(senhaMinimaValida("abcdefgh")).toBe(true);
+    expect(senhaMinimaValida("Teste@12")).toBe(true);
+    expect(senhaMinimaValida("1234567")).toBe(false);
+    expect(senhaMinimaValida("")).toBe(false);
+  });
+
+  it("aceita AUDIT26 sem diferenciar maiúsculas e minúsculas", () => {
+    expect(codigoAuditorValido("AUDIT26")).toBe(true);
+    expect(codigoAuditorValido("Audit26")).toBe(true);
+    expect(codigoAuditorValido("audit26")).toBe(true);
+    expect(codigoAuditorValido("AUDIT25")).toBe(false);
+    expect(codigoAuditorValido("AUDIT26 ")).toBe(false);
+    expect(codigoAuditorValido("")).toBe(false);
+  });
+
+  it("valida e-mails e restringe as opções de órgãos", () => {
     expect(emailValido("auditor@gov.br")).toBe(true);
     expect(emailValido("sem-arroba")).toBe(false);
-    expect(senhaForte("Teste@123456")).toBe(true);
-    expect(senhaForte("12345678")).toBe(false);
-    expect(senhaForte("apenasminusculas1")).toBe(false);
-  });
-
-  it("restringe os órgãos de agentes às opções autorizadas", () => {
     expect(orgaoValido("Polícia Militar (PM)")).toBe(true);
     expect(orgaoValido("Polícia Civil (PC)")).toBe(true);
     expect(orgaoValido("Guarda Municipal (GM)")).toBe(true);
