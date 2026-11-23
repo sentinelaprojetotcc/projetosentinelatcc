@@ -124,6 +124,14 @@ export async function listRecords(kind: RecordKind) {
   return (await db.prepare(query).all() as Record<string, unknown>[]).map(mapRow).map((item) => kind === "contests" ? { ...item, protocol: contestProtocol(item.id) } : item);
 }
 
+/** Atualiza somente o estado de leitura de uma notificação para usuários institucionais. */
+export async function markInstitutionalNotificationRead(id: string) {
+  await requireInstitutional();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Notificação inválida.");
+  const result = await db.prepare("UPDATE notifications SET status = 'Lida' WHERE id = ? AND status = 'Nova'").run(id);
+  return { ok: true };
+}
+
 export async function reviewContest(input: { id: string; decision: "Manter decisão" | "Alterar decisão" | "Cancelar decisão" | "Solicitar mais informações"; justification: string }) {
   const user = await requireInstitutional();
   if (user.institutionalType !== "auditor") throw new Error("Somente auditores podem concluir revisões humanas.");
