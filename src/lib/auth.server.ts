@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { env } from "cloudflare:workers";
 import { db } from "./db.server";
-import { cpfValido, emailValido, senhaMinimaValida, somenteDigitos } from "./institutional-validation";
+import { codigoAuditorValido, cpfValido, emailValido, senhaMinimaValida, somenteDigitos } from "./institutional-validation";
 import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
 
 export type AccountRole = "citizen" | "institutional";
@@ -114,12 +114,14 @@ export async function registerAccount(input: RegisterInput) {
   if (input.role === "institutional") {
     // Mantém a ativação fora da produção: o segredo de habilitação foi
     // configurado exclusivamente na prévia do Cloudflare.
-    const previewEnabled = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE;
-    if (!previewEnabled) {
+    const configuredCode = (env as unknown as { INSTITUTIONAL_SIGNUP_CODE?: string }).INSTITUTIONAL_SIGNUP_CODE;
+    // Exige habilitação explícita do protótipo. Um segredo antigo ou ausente
+    // NÃO pode ativar o código público de demonstração.
+    if (!configuredCode || !codigoAuditorValido(configuredCode)) {
       throw new Error("Ativação acadêmica não habilitada neste ambiente.");
     }
     const code = typeof input.authorizationCode === "string" ? input.authorizationCode : "";
-    if (code.toUpperCase() !== "AUDIT26") {
+    if (!codigoAuditorValido(code)) {
       throw new Error("Código de ativação incorreto.");
     }
   }
