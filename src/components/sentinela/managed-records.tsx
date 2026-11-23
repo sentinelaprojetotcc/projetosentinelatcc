@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addRecordFn, listRecordsFn, markInstitutionalNotificationReadFn, removeRecordFn, updateRecordFn, type ManagedRecord, type RecordKind } from "@/lib/records";
 
-export function ManagedRecords({ kind, title, description, sourceFilter, allowCreate = true }: { kind: RecordKind; title: string; description: string; sourceFilter?: string; allowCreate?: boolean }) {
+export function ManagedRecords({ kind, title, description, sourceFilter, allowCreate = true, allowMarkRead = false }: { kind: RecordKind; title: string; description: string; sourceFilter?: string; allowCreate?: boolean; allowMarkRead?: boolean }) {
   const [records, setRecords] = useState<ManagedRecord[]>([]);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -20,7 +20,7 @@ export function ManagedRecords({ kind, title, description, sourceFilter, allowCr
 
   return <div className="space-y-6">
     <PageHeader title={title} description={description} action={allowCreate ? <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "Fechar formulário" : "Adicionar registro"}</Button> : undefined} />
-    {kind === "notifications" && <p className="text-xs text-muted-foreground" role="status">
+    {kind === "notifications" && allowMarkRead && <p className="text-xs text-muted-foreground" role="status">
       {visible.filter((record) => record.status === "Nova").length} notificação(ões) não lida(s).
     </p>}
         {allowCreate && showForm && <Panel title="Novo registro manual">
@@ -74,7 +74,7 @@ export function ManagedRecords({ kind, title, description, sourceFilter, allowCr
             <div className="sm:col-span-2"><dt className="text-muted-foreground">Evidência</dt><dd>{record.evidenceData ? <a className="text-primary hover:underline" href={record.evidenceData} download={record.evidenceName ?? "evidencia"}>Abrir ou baixar {record.evidenceName}</a> : "Nenhuma evidência anexada"}</dd></div>
           </dl>
         </div>}
-        {kind === "notifications" && record.status === "Nova" && (
+        {kind === "notifications" && allowMarkRead && record.status === "Nova" && (
           <Button type="button" size="sm" variant="secondary" className="mt-4"
             onClick={async () => {
               try { await markInstitutionalNotificationReadFn({ data: { id: record.id } }); await load(); }
