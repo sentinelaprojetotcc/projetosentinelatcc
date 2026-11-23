@@ -15,7 +15,7 @@ type HeatFeatureCollection = {
   }>;
 };
 
-export function TacticalMap({ className, compact = false, filters, focusCoordinates }: { className?: string; compact?: boolean; filters?: MapFilterState; focusCoordinates?: [number, number] | null }) {
+export function TacticalMap({ className, compact = false, filters, focusCoordinates }: { className?: string; compact?: boolean; filters?: Partial<MapFilterState>; focusCoordinates?: [number, number] | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [loading, setLoading] = useState(true);
