@@ -66,12 +66,17 @@ test("dados fictícios 2026: sintaxe, integridade, idempotência e reversão", (
     for (const table of Object.keys(counts).filter((name) => name !== "users")) {
       db.exec(`CREATE TABLE ${table} (${baseFields}${extras[table] ?? ""});`);
     }
+    // Cenário realista: já existe um cidadão com CPF idêntico ao antigo CPF
+    // sintético. Nenhum INSERT OR IGNORE deve ocultar conflitos no cadastro.
+    const existingId = "cidadão-ja-cadastrado";
+    db.query("INSERT INTO users (id, role, name, email, password_hash, cpf) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(existingId, "citizen", "Cadastro anterior ao demo", "antes-do-demo@example.invalid", "hash-preexistente", "00000000001");
     const seed = readFileSync("migrations/demo/seed_2026_11_25.sql", "utf8");
     const rollback = readFileSync("migrations/demo/rollback_2026_11_25.sql", "utf8");
     db.exec(seed);
     for (const [table, expected] of Object.entries(counts)) {
       const first = db.query(`SELECT COUNT(*) AS total FROM ${table}`).get() as { total: number };
-      expect(first.total).toBe(expected);
+      expect(first.total).toBe(expected + (table === "users" ? 1 : 0));
     }
 
     const invalidDates = db.query(`
@@ -87,7 +92,7 @@ test("dados fictícios 2026: sintaxe, integridade, idempotência e reversão", (
       const n = db.query("SELECT COUNT(*) AS total FROM occurrences WHERE confidence BETWEEN ? AND ?").get(min,max) as { total: number };
       expect(n.total).toBeGreaterThan(0);
     }
-    const invalidAccounts = db.query("SELECT COUNT(*) AS total FROM users WHERE email NOT LIKE '%@sentinela.example.invalid' OR name NOT LIKE '%(DEMO)'").get() as { total: number };
+    const invalidAccounts = db.query("SELECT COUNT(*) AS total FROM users WHERE name LIKE '%(DEMO)' AND (email NOT LIKE '%@sentinela.example.invalid' OR cpf IS NOT NULL)").get() as { total: number };
     expect(invalidAccounts.total).toBe(0);
     const missingMarkers = db.query("SELECT COUNT(*) AS total FROM occurrences WHERE details NOT LIKE '[DEMO-SENTINELA-2026]%'").get() as { total: number };
     expect(missingMarkers.total).toBe(0);
@@ -95,13 +100,16 @@ test("dados fictícios 2026: sintaxe, integridade, idempotência e reversão", (
     db.exec(seed); // reexecução não duplica nenhum registro
     for (const [table, expected] of Object.entries(counts)) {
       const r = db.query(`SELECT COUNT(*) AS total FROM ${table}`).get() as { total: number };
-      expect(r.total).toBe(expected);
+      expect(r.total).toBe(expected + (table === "users" ? 1 : 0));
     }
     db.exec(rollback);
     for (const table of Object.keys(counts)) {
       const r = db.query(`SELECT COUNT(*) AS total FROM ${table}`).get() as { total: number };
-      expect(r.total).toBe(0);
+      expect(r.total).toBe(table === "users" ? 1 : 0);
     }
+    const existing = db.query("SELECT email, cpf FROM users WHERE id = ?").get(existingId) as {email:string;cpf:string} | undefined;
+    expect(existing?.cpf).toBe("00000000001");
+    expect(existing?.email).toBe("antes-do-demo@example.invalid");
   } finally {
     db.close();
   }
