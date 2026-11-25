@@ -235,7 +235,16 @@ export async function publicTransparency() {
   const count = async (table: string) => Number((await db.prepare(`SELECT COUNT(*) AS total FROM ${table}`).get() as { total: number }).total);
   const corrections = Number((await db.prepare("SELECT COUNT(*) AS total FROM contests WHERE status LIKE '%conclu%' OR details LIKE '%Alterar decisão%' OR details LIKE '%Cancelar decisão%'").get() as { total: number }).total);
   const limitations = (await db.prepare("SELECT title, details, status FROM data_quality ORDER BY event_date DESC LIMIT 6").all() as Array<{ title: string; details: string; status: string }>);
-  return { analyses: await count("predictions"), humanReviews: await count("audits"), contests: await count("contests"), corrections, biasAlerts: await count("bias_alerts"), mitigations: await count("mitigations"), limitations };
+  const demo = await db.prepare("SELECT 1 AS found FROM occurrences WHERE details LIKE '[DEMO-SENTINELA-2026]%' LIMIT 1").get() as { found: number } | undefined;
+  return { analyses: await count("predictions"), humanReviews: await count("audits"), contests: await count("contests"), corrections, biasAlerts: await count("bias_alerts"), mitigations: await count("mitigations"), limitations, hasDemoData: Boolean(demo) };
+}
+
+/** Identifica registros sintéticos de demonstração, sem divulgar dados pessoais. */
+export async function hasDemo2026Data() {
+  const user = await currentSession();
+  if (!user) throw new Error("Sessão necessária.");
+  const row = await db.prepare("SELECT 1 AS found FROM occurrences WHERE details LIKE '[DEMO-SENTINELA-2026]%' LIMIT 1").get() as { found: number } | undefined;
+  return Boolean(row);
 }
 
 export async function myCitizenOccurrences() {
