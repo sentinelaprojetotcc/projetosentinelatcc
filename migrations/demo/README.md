@@ -70,6 +70,33 @@ bunx wrangler d1 execute sentinela-db-preview --remote --file="./migrations/demo
 
 Os scripts verificam o ID, a conta de demonstração relacionada e o conteúdo anterior esperado para evitar sobrescrever alterações de outros usuários. Não são executados automaticamente pelo deploy.
 
+## Limpeza de rótulos para apresentação
+
+O arquivo `limpar_rotulos_apresentacao_2026_11_25.sql` atua exclusivamente sobre os IDs sintéticos criados pela carga de 25/11/2026. Remove marcadores como `(DEMO)` e `[DEMO]` e substitui `Modelo acadêmico fictício` por **Análise experimental**.
+
+As contas fictícias continuam com e-mails reservados `@sentinela.example.invalid`, mas o prefixo público é alterado para `participante-`. O acesso às contas continua desabilitado, e o aviso separado de dados simulados permanece no site.
+
+Faça backup do banco de prévia atualizado antes de executar (o arquivo privado fica na pasta `data/` ignorada pelo Git):
+
+```powershell
+bunx wrangler d1 export sentinela-db-preview --remote --output="./data/backup-preview-antes-rotulos-20261125.sql"
+```
+
+Atualize os arquivos e execute somente em `sentinela-db-preview`:
+
+```powershell
+git pull --ff-only origin feat/cloudflare-d1-migracao
+bunx wrangler d1 execute sentinela-db-preview --remote --file="./migrations/demo/limpar_rotulos_apresentacao_2026_11_25.sql"
+```
+
+Confira se os nomes ainda contêm o marcador:
+
+```powershell
+bunx wrangler d1 execute sentinela-db-preview --remote --command="SELECT COUNT(*) AS nomes_com_demo FROM users WHERE email LIKE '%@sentinela.example.invalid' AND name LIKE '%DEMO%';"
+```
+
+O esperado é `nomes_com_demo = 0`. O SQL também preserva status, datas, prioridades, percentuais e relacionamentos entre registros. Não execute em produção nem apresente os casos sintéticos como fatos policiais reais.
+
 ## Como desfazer a carga (somente prévia)
 
 ```powershell
