@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { accessibilityPreferencesFn } from "@/lib/auth";
 import { applyAccessibilityPreferences } from "@/lib/accessibility";
-import { listRecordsFn } from "@/lib/records";
+import { hasDemo2026DataFn, listRecordsFn } from "@/lib/records";
 
 export type NavItem = { label: string; to: string; icon: ReactNode };
 
@@ -29,8 +29,16 @@ export function AppShell({
 }) {
   const [open, setOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [demoDataPresent, setDemoDataPresent] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => { accessibilityPreferencesFn().then(applyAccessibilityPreferences).catch(() => undefined); }, [user.name]);
+  useEffect(() => {
+    let active = true;
+    void hasDemo2026DataFn().then((value) => {
+      if (active) setDemoDataPresent(value);
+    }).catch(() => { if (active) setDemoDataPresent(false); });
+    return () => { active = false; };
+  }, [path]);
   useEffect(() => {
     if (!showHeaderNotifications || !showUnreadCount) return;
     let cancelled = false;
@@ -121,6 +129,12 @@ export function AppShell({
             {user.initials}
           </div>
         </header>
+        {demoDataPresent && (
+          <p role="status" className="border-b border-warning/25 bg-warning/10 px-4 py-2 text-xs leading-relaxed text-foreground lg:px-8">
+            <strong>Dados de demonstração:</strong> esta prévia inclui ocorrências e indicadores inteiramente fictícios.
+            Percentuais de confiabilidade foram sorteados para testes e não representam riscos, estatísticas policiais ou resultados reais de IA.
+          </p>
+        )}
         <main className="min-w-0 flex-1 p-4 lg:p-8">{children}</main>
       </div>
     </div>
