@@ -14,10 +14,10 @@ Nunca execute os comandos no banco `sentinela-db` (produção).
 
 ## Como alimentar a prévia (PowerShell, na branch feat/cloudflare-d1-migracao)
 
-1. Antes de executar, faça um backup privado do D1 (pode conter dados pessoais previamente cadastrados):
+1. Antes de executar, faça um backup privado do D1 (pode conter dados pessoais previamente cadastrados). A pasta `data/` está no `.gitignore`; não publique esse arquivo:
 
 ```powershell
-bunx wrangler d1 export sentinela-db-preview --remote --output="./backup-preview-antes-demo-20261125.sql"
+bunx wrangler d1 export sentinela-db-preview --remote --output="./data/backup-preview-antes-demo-20261125.sql"
 ```
 
 2. Atualize o código local sem substituir mudanças locais pendentes:
