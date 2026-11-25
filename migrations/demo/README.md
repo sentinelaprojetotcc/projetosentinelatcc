@@ -4,7 +4,7 @@
 Nunca execute os comandos no banco `sentinela-db` (produção).
 
 ## O que esta carga faz
-- Cria **48 usuários sintéticos** com nomes de personagens e emails `.invalid`. Todas as senhas ficam inutilizáveis.
+- Cria **48 usuários sintéticos** com nomes de personagens, e-mails `.invalid` e **CPF nulo**, evitando colisão com CPFs do banco existente. Todas as senhas ficam inutilizáveis.
 - Adiciona **280 ocorrências** equilibradas entre Furto, Roubo, Violência, Dano, Ameaça, Acidente e Outros.
 - Inclui registros fictícios nas tabelas reais de previsões, contestações, notificações, patrulhamentos, recomendações, decisões, disparidades, auditorias, relatórios, mitigação, modelos e qualidade de dados.
 - As ocorrências têm localização aproximada em diversos municípios e bairros do Brasil, **prioridade Normal/Urgente** e faixas de confiabilidade **baixa (12–42%), média (48–73%) e alta (78–98%)**.
@@ -39,7 +39,7 @@ bunx wrangler d1 execute sentinela-db-preview --remote --file="./migrations/demo
 bunx wrangler d1 execute sentinela-db-preview --remote --command="SELECT COUNT(*) AS demo_ocorrencias FROM occurrences WHERE details LIKE '[DEMO-SENTINELA-2026]%';"
 ```
 
-**Pode executar novamente sem duplicar registros** (IDs determinísticos + `INSERT OR IGNORE`). Não sobrescreve registros existentes.
+**Pode executar novamente sem duplicar registros** (IDs determinísticos; nos usuários há `ON CONFLICT(id) DO NOTHING`, e nas demais tabelas há `INSERT OR IGNORE`). Não sobrescreve registros existentes.
 
 ## Como desfazer a carga (somente prévia)
 
@@ -56,6 +56,7 @@ O rollback apaga **apenas os IDs criados pelo gerador desta carga**, em todas as
 - O mapa de calor mostra a distribuição dos incidentes fictícios; uma visualização com esses dados não representa crime real nem deve orientar qualquer operação policial.
 - As tabelas existentes no banco de prévia devem manter os nomes e colunas usados em `src/lib/records.server.ts` e `src/lib/auth.server.ts`; caso o Wrangler informe uma incompatibilidade, interrompa a execução e examine o erro. O backup e rollback foram preparados para facilitar a recuperação.
 - Nenhum PDF real, CPF de pessoa real, telefone, endereço residencial ou registro policial verdadeiro foi adicionado.
+- O teste automatizado inclui um cidadão já existente com CPF que causaria colisão na versão antiga do arquivo, para garantir compatibilidade com bancos que não estão vazios.
 
 ## Contagem prevista
 | Tabela | Quantidade |
