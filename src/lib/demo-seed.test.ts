@@ -209,6 +209,13 @@ test("rótulos de apresentação: sem DEMO visível, mantendo integridade e orig
     const apply = readFileSync("migrations/demo/limpar_rotulos_apresentacao_2026_11_25.sql", "utf8");
     db.exec(apply);
     db.exec(apply);
+    const renameModels = readFileSync("migrations/demo/corrigir_titulos_modelos_2026_11_25.sql", "utf8");
+    db.exec(renameModels);
+    db.exec(renameModels);
+    const updatedModels = db.query("SELECT title FROM models").all() as Array<{title:string}>;
+    expect(updatedModels.length).toBe(12);
+    expect(updatedModels.every((model) => /^Modelo experimental v\d+$/.test(model.title))).toBe(true);
+
 
     const origin = db.query("SELECT COUNT(*) AS n FROM users WHERE email LIKE '%@sentinela.example.invalid'").get() as {n:number};
     expect(origin.n).toBe(48);
