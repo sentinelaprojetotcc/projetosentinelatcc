@@ -114,3 +114,73 @@ test("dados fictícios 2026: sintaxe, integridade, idempotência e reversão", (
     db.close();
   }
 });
+
+
+// A apresentação deve mostrar apenas a narrativa de cada caso; o aviso de
+// demonstração é exibido fora da descrição e depende das contas .invalid.
+test("normaliza descrições de 678 casos sem alterar dados reais nem perder revisão", () => {
+  const db = new Database(":memory:");
+  try {
+    db.exec(schema);
+    for (const table of Object.keys(counts).filter((name) => name !== "users")) {
+      db.exec(`CREATE TABLE ${table} (${baseFields}${extras[table] ?? ""});`);
+    }
+    const existingId = "real-existing-account";
+    db.query("INSERT INTO users (id, role, name, email, password_hash) VALUES (?, ?, ?, ?, ?)")
+      .run(existingId, "citizen", "Registro anterior", "previous-account@example.invalid", "no-login");
+    db.query("INSERT INTO occurrences (id, title, region, event_date, event_time, source, status, confidence, details, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run("existing-occurrence", "Outro", "Campinas", "2026-10-01", "09:00", "População", "Em análise", 0, "Descrição anterior preservada.", existingId);
+
+    db.exec(readFileSync("migrations/demo/seed_2026_11_25.sql", "utf8"));
+    const tables = Object.keys(counts).filter((name) => name !== "users");
+    for (const table of tables) {
+      db.exec(`UPDATE ${table} SET title = TRIM(REPLACE(title, '[DEMO]', '')), details = TRIM(REPLACE(details, '[DEMO-SENTINELA-2026]', ''));`);
+    }
+    const oldTexts = new Map<string, string>();
+    for (const table of tables) {
+      const entries = db.query(`SELECT id, details FROM ${table} WHERE id != 'existing-occurrence'`).all() as Array<{id:string;details:string}>;
+      for (const item of entries) oldTexts.set(`${table}:${item.id}`, item.details);
+    }
+    expect(oldTexts.size).toBe(678);
+    const normalizeSql = readFileSync("migrations/demo/normalize_descriptions_2026_11_25.sql", "utf8");
+    const restoreSql = readFileSync("migrations/demo/restore_descriptions_2026_11_25.sql", "utf8");
+
+    db.exec(normalizeSql);
+    let changed = 0;
+    const normalizedTexts = new Map<string, string>();
+    const forbidden = /(?:\[DEMO\]|\[DEMO-SENTINELA-2026\]|cenário inteiramente fictício|teste acadêmico|confiabilidade simulada|valor aleatório|boletim de ocorrência ou fato confirmado)/i;
+    for (const table of tables) {
+      const entries = db.query(`SELECT id, details FROM ${table} WHERE id != 'existing-occurrence'`).all() as Array<{id:string;details:string}>;
+      for (const item of entries) {
+        const key = `${table}:${item.id}`;
+        if (oldTexts.get(key) !== item.details) changed++;
+        expect(item.details.length).toBeGreaterThan(45);
+        expect(forbidden.test(item.details)).toBe(false);
+        normalizedTexts.set(key,item.details);
+      }
+    }
+    expect(changed).toBe(678);
+    const example = db.query("SELECT details FROM occurrences WHERE title='Roubo' AND details LIKE '%carteira%' LIMIT 1").get() as {details:string} | null;
+    expect(example?.details).toContain("carteira");
+    const completed = db.query("SELECT details FROM contests WHERE status='Revisão concluída'").all() as Array<{details:string}>;
+    expect(completed.length).toBeGreaterThan(0);
+    expect(completed.every((row) => row.details.includes("\n\nDecisão humana:"))).toBe(true);
+    const ai = db.query("SELECT details FROM ai_decisions").all() as Array<{details:string}>;
+    expect(ai.every(row => row.details.startsWith("Resultado da IA:"))).toBe(true);
+    const untouched = db.query("SELECT details FROM occurrences WHERE id='existing-occurrence'").get() as {details:string};
+    expect(untouched.details).toBe("Descrição anterior preservada.");
+
+    db.exec(normalizeSql);
+    for (const table of tables) {
+      const entries = db.query(`SELECT id, details FROM ${table} WHERE id != 'existing-occurrence'`).all() as Array<{id:string;details:string}>;
+      for (const item of entries) expect(item.details).toBe(normalizedTexts.get(`${table}:${item.id}`));
+    }
+    db.exec(restoreSql);
+    for (const table of tables) {
+      const entries = db.query(`SELECT id, details FROM ${table} WHERE id != 'existing-occurrence'`).all() as Array<{id:string;details:string}>;
+      for (const item of entries) expect(item.details).toBe(oldTexts.get(`${table}:${item.id}`));
+    }
+    expect((db.query("SELECT details FROM occurrences WHERE id='existing-occurrence'").get() as {details:string}).details)
+      .toBe("Descrição anterior preservada.");
+  } finally { db.close(); }
+});
