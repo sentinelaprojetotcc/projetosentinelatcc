@@ -67,7 +67,7 @@ export function OrgDashboard() {
         <AgentAnalyses embedded />
       </section>
     )}
-    <Disclaimer>Todos os números acima são calculados diretamente das tabelas do banco de dados. Nenhum valor demonstrativo é exibido.</Disclaimer>
+    <Disclaimer>Os números são calculados diretamente das tabelas do banco. Se houver registros sinalizados DEMO, eles são fictícios e não representam estatísticas reais de segurança.</Disclaimer>
   </div>;
 }
 
