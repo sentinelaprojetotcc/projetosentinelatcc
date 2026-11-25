@@ -184,3 +184,59 @@ test("normaliza descrições de 678 casos sem alterar dados reais nem perder rev
       .toBe("Descrição anterior preservada.");
   } finally { db.close(); }
 });
+
+
+test("rótulos de apresentação: sem DEMO visível, mantendo integridade e origem sintética", () => {
+  const db = new Database(":memory:");
+  try {
+    db.exec(schema);
+    for (const table of Object.keys(counts).filter(name => name !== "users")) {
+      db.exec(`CREATE TABLE ${table} (${baseFields}${extras[table] ?? ""});`);
+    }
+    db.query("INSERT INTO users (id, role, name, email, password_hash) VALUES (?, ?, ?, ?, ?)")
+      .run("usuario-preexistente", "citizen", "Nome preexistente", "usuario-real@example.com", "hash-original");
+    db.query("INSERT INTO occurrences (id,title,region,event_date,event_time,source,status,confidence,details,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .run("caso-preexistente", "Furto", "Recife", "2026-10-05", "10:00", "População", "Recebida", 51, "Registro preexistente.", "usuario-preexistente");
+
+    db.exec(readFileSync("migrations/demo/seed_2026_11_25.sql", "utf8"));
+    const tables = Object.keys(counts).filter(name => name !== "users");
+    for (const table of tables) {
+      db.exec(`UPDATE ${table} SET title = TRIM(REPLACE(title, '[DEMO]', '')),
+        details = TRIM(REPLACE(details, '[DEMO-SENTINELA-2026]', ''));`);
+    }
+    db.exec(readFileSync("migrations/demo/normalize_descriptions_2026_11_25.sql", "utf8"));
+    const before = db.query("SELECT COUNT(*) AS n FROM occurrences").get() as { n:number };
+    const apply = readFileSync("migrations/demo/limpar_rotulos_apresentacao_2026_11_25.sql", "utf8");
+    db.exec(apply);
+    db.exec(apply);
+
+    const origin = db.query("SELECT COUNT(*) AS n FROM users WHERE email LIKE '%@sentinela.example.invalid'").get() as {n:number};
+    expect(origin.n).toBe(48);
+    const personLabels = db.query(`SELECT COUNT(*) AS n FROM users WHERE
+      email LIKE '%@sentinela.example.invalid' AND
+      (name LIKE '%DEMO%' OR email LIKE '%demo%' OR
+       COALESCE(institution, '') LIKE '%DEMO%' OR
+       COALESCE(functional_id, '') LIKE '%DEMO%' OR
+       password_hash LIKE '%DEMO%')`).get() as {n:number};
+    expect(personLabels.n).toBe(0);
+
+    for (const table of tables) {
+      const result = db.query(`SELECT COUNT(*) AS n FROM ${table} WHERE created_by IN (
+        SELECT id FROM users WHERE email LIKE '%@sentinela.example.invalid'
+      ) AND (title LIKE '%DEMO%' OR source LIKE '%Modelo acadêmico fictício%'
+        OR details LIKE '%DEMO%' OR title LIKE '%Modelo acadêmico fictício%'
+        OR details LIKE '%Modelo acadêmico fictício%')`).get() as {n:number};
+      expect(result.n).toBe(0);
+      const n = db.query(`SELECT COUNT(*) AS total FROM ${table}`).get() as {total:number};
+      expect(n.total).toBe(counts[table] + (table === "occurrences" ? 1 : 0));
+    }
+    const pred = db.query("SELECT DISTINCT source FROM predictions WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@sentinela.example.invalid')").all() as Array<{source:string}>;
+    expect(pred).toEqual([{ source: "Análise experimental" }]);
+    const existing = db.query("SELECT name, email, password_hash FROM users WHERE id = 'usuario-preexistente'").get();
+    expect(existing).toEqual({name:"Nome preexistente",email:"usuario-real@example.com",password_hash:"hash-original"});
+    const record = db.query("SELECT details, source FROM occurrences WHERE id = 'caso-preexistente'").get();
+    expect(record).toEqual({details:"Registro preexistente.",source:"População"});
+    expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
+    expect(before.n).toBe(281);
+  } finally { db.close(); }
+});
