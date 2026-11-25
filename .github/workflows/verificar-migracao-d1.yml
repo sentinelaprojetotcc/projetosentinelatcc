@@ -27,5 +27,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Testar validações do acesso institucional
         run: bun test src/lib/institutional-validation.test.ts
+      - name: Validar SQL de demonstracao e reversao sem alterar banco remoto
+        run: bun test src/lib/demo-seed.test.ts
       - name: Compilar cliente e servidor
         run: bun run build
