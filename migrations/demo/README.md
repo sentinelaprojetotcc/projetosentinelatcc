@@ -9,7 +9,7 @@ Nunca execute os comandos no banco `sentinela-db` (produção).
 - Inclui registros fictícios nas tabelas reais de previsões, contestações, notificações, patrulhamentos, recomendações, decisões, disparidades, auditorias, relatórios, mitigação, modelos e qualidade de dados.
 - As ocorrências têm localização aproximada em diversos municípios e bairros do Brasil, **prioridade Normal/Urgente** e faixas de confiabilidade **baixa (12–42%), média (48–73%) e alta (78–98%)**.
 - Todas as datas de evento estão entre **01/01/2026** e **25/11/2026**, inclusive.
-- O marcador **`[DEMO-SENTINELA-2026]`** identifica cada descrição fictícia. Nomes levam **(DEMO)**.
+- Na carga original, o marcador **`[DEMO-SENTINELA-2026]`** identifica as descrições fictícias. Mesmo que seja retirado para melhorar a leitura, o site detecta os usuários sintéticos pelos e-mails `.invalid` e exibe aviso separado. Nomes dos usuários sintéticos levam **(DEMO)**.
 - Percentuais são gerados aleatoriamente: **não representam cálculos de um modelo, índices reais de crime, auditorias verdadeiras nem probabilidade de risco**.
 
 ## Como alimentar a prévia (PowerShell, na branch feat/cloudflare-d1-migracao)
@@ -40,6 +40,35 @@ bunx wrangler d1 execute sentinela-db-preview --remote --command="SELECT COUNT(*
 ```
 
 **Pode executar novamente sem duplicar registros** (IDs determinísticos; nos usuários há `ON CONFLICT(id) DO NOTHING`, e nas demais tabelas há `INSERT OR IGNORE`). Não sobrescreve registros existentes.
+
+## Reescrever somente as descrições para apresentação
+
+Depois da importação e da limpeza dos prefixos executada anteriormente, é possível substituir **apenas as 678 descrições dos registros sintéticos**, incluindo as 280 ocorrências, mantendo categoria, região, status, data, prioridade, percentual de confiabilidade e vínculos entre registros.
+
+O texto passa a relatar de forma direta o que aconteceu e como, sem observações repetitivas sobre testes dentro da descrição. A sinalização de dados simulados fica em um aviso separado no site, identificado pelas contas sintéticas de e-mail `.invalid` (não depende da presença do marcador no campo `details`).
+
+Execute exclusivamente na prévia:
+
+```powershell
+git pull --ff-only origin feat/cloudflare-d1-migracao
+bunx wrangler d1 execute sentinela-db-preview --remote --file="./migrations/demo/normalize_descriptions_2026_11_25.sql"
+```
+
+Confira sem visualizar informações pessoais:
+
+```powershell
+bunx wrangler d1 execute sentinela-db-preview --remote --command="SELECT COUNT(*) AS textos_antigos FROM occurrences WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@sentinela.example.invalid') AND details LIKE '%Cenário inteiramente fictício para testes acadêmicos%';"
+```
+
+O resultado esperado para `textos_antigos` é **0**. Isso confirma a remoção do texto repetitivo dessas ocorrências, sem exigir que a simulação seja apresentada como fato real.
+
+Para restaurar **somente essas descrições** ao estado posterior à limpeza dos prefixos, sem apagar registros:
+
+```powershell
+bunx wrangler d1 execute sentinela-db-preview --remote --file="./migrations/demo/restore_descriptions_2026_11_25.sql"
+```
+
+Os scripts verificam o ID, a conta de demonstração relacionada e o conteúdo anterior esperado para evitar sobrescrever alterações de outros usuários. Não são executados automaticamente pelo deploy.
 
 ## Como desfazer a carga (somente prévia)
 
