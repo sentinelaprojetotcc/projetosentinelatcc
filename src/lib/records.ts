@@ -47,6 +47,10 @@ export const citizenDecisionRecordsFn = createServerFn({ method: "GET" }).handle
 export const myCitizenContestsFn = createServerFn({ method: "GET" }).handler(async () => {
   const { myCitizenContests } = await import("./records.server"); return myCitizenContests();
 });
+export const hasDemo2026DataFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { hasDemo2026Data } = await import("./records.server");
+  return hasDemo2026Data();
+});
 export const publicTransparencyFn = createServerFn({ method: "GET" }).handler(async () => {
   const { publicTransparency } = await import("./records.server"); return publicTransparency();
 });
