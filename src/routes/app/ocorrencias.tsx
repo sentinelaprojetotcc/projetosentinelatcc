@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Plus, X } from "lucide-react";
+import { CitizenOccurrenceForm } from "@/components/sentinela/citizen-occurrence-form";
 import { PageHeader, Panel, StatusPill, Timeline } from "@/components/sentinela/ui-kit";
 import { Button } from "@/components/ui/button";
 import { myCitizenOccurrencesFn, type ManagedRecord } from "@/lib/records";
 
 export const Route = createFileRoute("/app/ocorrencias")({
+  validateSearch: (search: Record<string, unknown>) => ({ registrar: search.registrar === true ? true : undefined }),
   head: () => ({
     meta: [
       { title: "Minhas ocorrências — Sentinela" },
@@ -34,11 +37,23 @@ function MinhasOcorrencias() {
   const [open, setOpen] = useState<string | null>(null);
   const [items, setItems] = useState<Array<ManagedRecord & { protocol: string }>>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { myCitizenOccurrencesFn().then(setItems).finally(() => setLoading(false)); }, []);
+  const { registrar } = Route.useSearch();
+  const [showForm, setShowForm] = useState(Boolean(registrar));
+  useEffect(() => { if (registrar) setShowForm(true); }, [registrar]);
+  const refresh = async () => { setItems(await myCitizenOccurrencesFn()); };
+  useEffect(() => { void refresh().finally(() => setLoading(false)); }, []);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Minhas ocorrências" description="Registros enviados por você." />
+      <PageHeader title="Minhas ocorrências" description="Registros enviados por você, protocolos e acompanhamento." action={
+        <Button type="button" onClick={() => setShowForm((open) => !open)} aria-expanded={showForm} aria-controls="formulario-ocorrencia">
+          {showForm ? <X className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
+          {showForm ? "Fechar formulário" : "Registrar Ocorrência"}
+        </Button>
+      } />
+      {showForm && <section id="formulario-ocorrencia" className="rounded-xl border border-primary/30 bg-card/40 p-3 sm:p-5">
+        <CitizenOccurrenceForm onSuccess={refresh} />
+      </section>}
 
       <div className="space-y-4">
         {items.map((o) => (

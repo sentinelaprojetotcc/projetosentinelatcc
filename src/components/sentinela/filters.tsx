@@ -41,7 +41,7 @@ function FilterSelect({
 
 export type MapFilterState = { period: string; type: string; time: string; weekday: string; source: string; status: string; confidence: string };
 export const defaultMapFilters: MapFilterState = { period: "Últimos 30 dias", type: "Todos os tipos", time: "Todos", weekday: "Todos", source: "Todas", status: "Todos", confidence: "Qualquer" };
-export function MapFilters({ value = defaultMapFilters, onChange }: { value?: MapFilterState; onChange?: (filters: MapFilterState) => void }) {
+export function MapFilters({ value = defaultMapFilters, onChange, citizen = false }: { value?: MapFilterState; onChange?: (filters: MapFilterState) => void; citizen?: boolean }) {
   const change = (key: keyof MapFilterState) => (next: string) => onChange?.({ ...value, [key]: next });
   return (
     <div className="surface-card p-4">
@@ -53,12 +53,48 @@ export function MapFilters({ value = defaultMapFilters, onChange }: { value?: Ma
         <FilterSelect label="Tipo" value={value.type} onChange={change("type")} options={["Todos os tipos", "Furto", "Roubo", "Violência", "Dano", "Ameaça", "Acidente"]} />
         <FilterSelect label="Horário" value={value.time} onChange={change("time")} options={["Todos", "00h-06h", "06h-12h", "12h-18h", "18h-00h"]} />
         <FilterSelect label="Dia da semana" value={value.weekday} onChange={change("weekday")} options={["Todos", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]} />
-        <FilterSelect label="Origem" value={value.source} onChange={change("source")} options={["Todas", "População", "Registro policial", "Outras fontes"]} />
-        <FilterSelect label="Status" value={value.status} onChange={change("status")} options={["Todos", "Recebida", "Em análise", "Validação", "Confirmada", "Encaminhada", "Encerrada"]} />
-        <FilterSelect label="Confiabilidade" value={value.confidence} onChange={change("confidence")} options={["Qualquer", "Acima de 50%", "Acima de 70%", "Acima de 85%"]} />
+        {!citizen && (
+          <>
+            <FilterSelect label="Origem" value={value.source} onChange={change("source")} options={["Todas", "População", "Registro policial", "Outras fontes"]} />
+            <FilterSelect label="Status" value={value.status} onChange={change("status")} options={["Todos", "Recebida", "Em análise", "Validação", "Confirmada", "Encaminhada", "Encerrada"]} />
+            <FilterSelect label="Confiabilidade" value={value.confidence} onChange={change("confidence")} options={["Qualquer", "Acima de 50%", "Acima de 70%", "Acima de 85%"]} />
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+/** Filtros de calor usados pela População e pelo Agente: sem origem, status ou confiabilidade. */
+export type CoreMapFilterState = Pick<MapFilterState, "period" | "type" | "time" | "weekday">;
+export const defaultCoreMapFilters: CoreMapFilterState = {
+  period: "Últimos 30 dias",
+  type: "Todos os tipos",
+  time: "Todos",
+  weekday: "Todos",
+};
+
+export function CoreMapFilters({ value, onChange }: {
+  value: CoreMapFilterState;
+  onChange: (filters: CoreMapFilterState) => void;
+}) {
+  const change = (key: keyof CoreMapFilterState) =>
+    (next: string) => onChange({ ...value, [key]: next });
+  return <div className="surface-card p-4">
+    <p className="mb-3 flex items-center gap-2 text-xs font-medium text-primary">
+      <Filter className="size-3.5" aria-hidden="true" /> Filtros do mapa
+    </p>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <FilterSelect label="Período" value={value.period} onChange={change("period")}
+        options={["Últimos 30 dias", "Últimos 7 dias", "3 meses", "12 meses"]} />
+      <FilterSelect label="Tipo" value={value.type} onChange={change("type")}
+        options={["Todos os tipos", "Furto", "Roubo", "Violência", "Dano", "Ameaça", "Acidente"]} />
+      <FilterSelect label="Horário" value={value.time} onChange={change("time")}
+        options={["Todos", "00h-06h", "06h-12h", "12h-18h", "18h-00h"]} />
+      <FilterSelect label="Dia da semana" value={value.weekday} onChange={change("weekday")}
+        options={["Todos", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]} />
+    </div>
+  </div>;
 }
 
 export function TableFilters() {

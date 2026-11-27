@@ -14,6 +14,12 @@ export const updateRecordFn = createServerFn({ method: "POST" }).validator((inpu
 export const removeRecordFn = createServerFn({ method: "POST" }).validator((input: { kind: RecordKind; id: string }) => input).handler(async ({ data }) => {
   const { removeRecord } = await import("./records.server"); return removeRecord(data.kind, data.id);
 });
+export const markInstitutionalNotificationReadFn = createServerFn({ method: "POST" })
+  .validator((input: { id: string }) => input)
+  .handler(async ({ data }) => {
+    const { markInstitutionalNotificationRead } = await import("./records.server");
+    return markInstitutionalNotificationRead(data.id);
+  });
 export const citizenDashboardFn = createServerFn({ method: "GET" }).handler(async () => {
   const { citizenDashboard } = await import("./records.server"); return citizenDashboard();
 });
@@ -40,6 +46,10 @@ export const citizenDecisionRecordsFn = createServerFn({ method: "GET" }).handle
 });
 export const myCitizenContestsFn = createServerFn({ method: "GET" }).handler(async () => {
   const { myCitizenContests } = await import("./records.server"); return myCitizenContests();
+});
+export const hasDemo2026DataFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { hasDemo2026Data } = await import("./records.server");
+  return hasDemo2026Data();
 });
 export const publicTransparencyFn = createServerFn({ method: "GET" }).handler(async () => {
   const { publicTransparency } = await import("./records.server"); return publicTransparency();

@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sentinela-tcc",
+  "compatibility_date": "2026-11-17",
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sentinela-db",
+      "database_id": "bc71aa3b-1c0f-456d-b1a8-f080c31663f6"
+    }
+  ],
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "sentinela-db-preview",
+        "database_id": "5353bc16-9c95-43ce-858e-25b943502461"
+      }
+    ],
+    "r2_buckets": [
+      {
+        "binding": "AGENT_DOCUMENTS",
+        "bucket_name": "sentinela-documentos-preview"
+      }
+    ]
+  }
+}

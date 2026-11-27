@@ -11,7 +11,7 @@ export const registerFn = createServerFn({ method: "POST" })
   });
 
 export const loginFn = createServerFn({ method: "POST" })
-  .validator((input: { email: string; password: string; role: AccountRole; functionalId?: string }) => input)
+  .validator((input: { email: string; password: string; role: AccountRole; institutionalType?: InstitutionalType }) => input)
   .handler(async ({ data }) => {
     const { loginAccount } = await import("./auth.server");
     return loginAccount(data);
@@ -24,7 +24,7 @@ export const sessionFn = createServerFn({ method: "GET" }).handler(async () => {
 
 export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
   const { endSession } = await import("./auth.server");
-  endSession();
+  await endSession();
   return { ok: true };
 });
 export const accessibilityPreferencesFn = createServerFn({ method: "GET" }).handler(async () => {
@@ -45,3 +45,14 @@ export const updatePhoneFn = createServerFn({ method: "POST" })
 export const resetInstitutionalPasswordFn = createServerFn({ method: "POST" })
   .validator((input: { email: string; functionalId: string; newPassword: string }) => input)
   .handler(async ({ data }) => { const { resetInstitutionalPassword } = await import("./auth.server"); return resetInstitutionalPassword(data); });
+
+/** Apenas protocola a solicitação do agente: nunca cria sessão nem concede perfil. */
+export const submitAgentApplicationFn = createServerFn({ method: "POST" })
+  .validator((input: {
+    name: string; cpf: string; email: string; password: string; institution: string;
+    documentName: string; documentType: string; documentBase64: string;
+  }) => input)
+  .handler(async ({ data }) => {
+    const { submitAgentApplication } = await import("./institutional-applications.server");
+    return submitAgentApplication(data);
+  });

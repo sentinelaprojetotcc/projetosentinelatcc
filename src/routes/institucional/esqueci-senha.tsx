@@ -1,42 +1,42 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, KeyRound, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/brand";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { resetInstitutionalPasswordFn } from "@/lib/auth";
 
 export const Route = createFileRoute("/institucional/esqueci-senha")({
-  head: () => ({ meta: [{ title: "Recuperar senha institucional — Sentinela" }] }), component: RecuperarSenhaInstitucional,
+  validateSearch: (search: Record<string, unknown>) => ({
+    perfil: search.perfil === "auditor" || search.perfil === "agente" ? search.perfil : undefined,
+  }),
+  head: () => ({ meta: [{ title: "Recuperar senha institucional — Sentinela" }] }),
+  component: RecuperarSenhaInstitucional,
 });
 
 function RecuperarSenhaInstitucional() {
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  return <div className="relative flex min-h-screen items-center justify-center px-6 py-12"><div className="grid-lines absolute inset-0 opacity-40" />
-    <div className="relative w-full max-w-md"><Logo size={34} subtitle="Plataforma institucional" />
-      <form className="surface-card mt-6 space-y-4 p-6" onSubmit={async (event) => {
-        event.preventDefault(); setError(""); const form = new FormData(event.currentTarget);
-        const newPassword = String(form.get("newPassword"));
-        if (newPassword !== String(form.get("confirmPassword"))) { setError("As novas senhas não coincidem."); return; }
-        setLoading(true);
-        try { await resetInstitutionalPasswordFn({ data: { email: String(form.get("email")), functionalId: String(form.get("functionalId")), newPassword } }); await navigate({ to: "/institucional/entrar" }); }
-        catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível redefinir a senha."); }
-        finally { setLoading(false); }
-      }}>
-        <div><h1 className="font-sans text-xl font-semibold">Recuperar senha institucional</h1><p className="mt-1 text-xs text-muted-foreground">Confirme sua identificação funcional para definir uma nova senha.</p></div>
-        <Field label="E-mail institucional" name="email" type="email" required />
-        <Field label="Matrícula / identificação funcional" name="functionalId" required />
-        <Field label="Nova senha" name="newPassword" type="password" minLength={8} required />
-        <Field label="Confirmar nova senha" name="confirmPassword" type="password" minLength={8} required />
-        {error && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={loading}>{loading ? "Redefinindo..." : "Redefinir senha"}</Button>
-        <Link to="/institucional/entrar" className="block text-center text-xs text-muted-foreground hover:text-foreground">Voltar para entrar</Link>
-      </form>
-    </div></div>;
-}
-
-function Field({ label, name, ...props }: { label: string; name: string } & React.ComponentProps<typeof Input>) {
-  return <div className="space-y-2"><Label htmlFor={name}>{label}</Label><Input id={name} name={name} {...props} /></div>;
+  const { perfil } = Route.useSearch();
+  const nome = perfil === "auditor" ? "Auditor" : perfil === "agente" ? "Agente de Segurança" : "institucional";
+  return (
+    <main className="relative flex min-h-screen items-center justify-center px-5 py-12">
+      <div className="page-glow absolute inset-0" aria-hidden="true" />
+      <div className="relative z-10 w-full max-w-md">
+        <Logo size={34} subtitle="Plataforma institucional" />
+        <section className="surface-card mt-6 space-y-5 rounded-2xl p-7">
+          <span className="flex size-12 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
+            <KeyRound className="size-6" aria-hidden="true" />
+          </span>
+          <h1 className="text-xl font-semibold">Recuperação de senha — {nome}</h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            A recuperação automática permanece temporariamente indisponível até que exista verificação
+            segura da identidade. Procure o responsável pelo Sentinela para recuperar seu acesso.
+          </p>
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            Por segurança, CPF ou matrícula isoladamente não permitem trocar a senha.
+          </p>
+          <Link to="/institucional/entrar" search={perfil ? { perfil } : {}}
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+            <ArrowLeft className="size-4" aria-hidden="true" /> Voltar ao login {perfil ? "de " + nome : "institucional"}
+          </Link>
+        </section>
+      </div>
+    </main>
+  );
 }
