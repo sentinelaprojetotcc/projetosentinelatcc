@@ -29,5 +29,7 @@ jobs:
         run: bun test src/lib/institutional-validation.test.ts
       - name: Validar SQL de demonstracao e reversao sem alterar banco remoto
         run: bun test src/lib/demo-seed.test.ts
+      - name: Validar dados de agentes e rollback em SQLite isolado
+        run: bun test src/lib/agent-demo-seed.test.ts
       - name: Compilar cliente e servidor
         run: bun run build
